@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Zap, LayoutDashboard, Globe, Code2, ShieldAlert, CreditCard, 
-  ShieldCheck, Lock, Unlock, Bell, User, LogOut, PlusCircle, CheckCircle2, Scale 
+  ShieldCheck, Lock, Unlock, Bell, User, LogOut, PlusCircle, CheckCircle2, Scale, Play, Pause 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import AdminPinModal from './AdminPinModal';
@@ -9,7 +9,7 @@ import AdminPinModal from './AdminPinModal';
 export default function Navbar() {
   const { 
     user, isAdminUnlocked, activeTab, setActiveTab, lockAdmin, 
-    currentBalance, kycData, notifications 
+    currentBalance, kycData, notifications, isLiveSimulating, setIsLiveSimulating 
   } = useApp();
 
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
@@ -37,13 +37,16 @@ export default function Navbar() {
                 <span className="logo-text">AdMetrics</span>
                 <span className="logo-badge">PRO</span>
               </div>
-              <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.3px' }}>
-                AdSense Monetization & Ad Network
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '1px' }}>
+                <span className="pulse-dot"></span>
+                <p style={{ fontSize: '0.65rem', color: 'var(--accent-green)', fontWeight: 700, letterSpacing: '0.3px' }}>
+                  REAL-TIME RTB ENGINE ACTIVE
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Nav Navigation Links */}
+          {/* Navigation Links */}
           <ul className="nav-links">
             <li 
               className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
@@ -96,7 +99,18 @@ export default function Navbar() {
 
           {/* Right Header Actions */}
           <div className="nav-actions">
-            {/* Balance Badge */}
+            {/* Live Ticker Toggle */}
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={() => setIsLiveSimulating(!isLiveSimulating)}
+              title={isLiveSimulating ? "Pause live RTB impression stream" : "Start live RTB impression stream"}
+              style={{ color: isLiveSimulating ? 'var(--accent-green)' : 'var(--text-muted)' }}
+            >
+              {isLiveSimulating ? <Pause size={14} /> : <Play size={14} />}
+              <span style={{ fontSize: '0.75rem' }}>{isLiveSimulating ? 'Live Stream' : 'Paused'}</span>
+            </button>
+
+            {/* Unpaid Balance Badge */}
             <div style={{
               background: 'var(--bg-card)', border: '1px solid var(--border-color)',
               padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
@@ -109,7 +123,7 @@ export default function Navbar() {
               </span>
             </div>
 
-            {/* Notification Bell */}
+            {/* Notifications Bell */}
             <div style={{ position: 'relative' }}>
               <button 
                 onClick={() => setShowNotifs(!showNotifs)}
@@ -146,7 +160,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Admin Gate Button */}
+            {/* Admin Login Button */}
             {isAdminUnlocked ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <button 
@@ -175,7 +189,7 @@ export default function Navbar() {
               </button>
             )}
 
-            {/* User Profile Chip */}
+            {/* Publisher Profile Chip */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.35rem 0.6rem',
               background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)'

@@ -5,7 +5,7 @@ const AppContext = createContext();
 
 const MASTER_ADMIN_PIN = "20032004";
 
-// Initial Demo Seed Data
+// Demo Initial Data
 const INITIAL_USER = {
   id: 'pub_99214',
   name: 'Victor Publisher',
@@ -26,7 +26,9 @@ const INITIAL_SITES = [
     dailyClicks: 1420,
     cpm: 3.45,
     earnings: 1240.80,
-    verifiedAt: '2026-02-10'
+    verifiedAt: '2026-02-10',
+    healthScore: 98,
+    sslVerified: true
   },
   {
     id: 'site_2',
@@ -38,7 +40,9 @@ const INITIAL_SITES = [
     dailyClicks: 980,
     cpm: 6.80,
     earnings: 980.50,
-    verifiedAt: '2026-03-01'
+    verifiedAt: '2026-03-01',
+    healthScore: 95,
+    sslVerified: true
   },
   {
     id: 'site_3',
@@ -50,7 +54,9 @@ const INITIAL_SITES = [
     dailyClicks: 0,
     cpm: 2.10,
     earnings: 0.00,
-    submittedAt: '2026-07-24'
+    submittedAt: '2026-07-24',
+    healthScore: 82,
+    sslVerified: true
   }
 ];
 
@@ -60,9 +66,11 @@ const INITIAL_AD_UNITS = [
     siteId: 'site_1',
     siteName: 'TechPulse Daily',
     name: 'Header Leaderboard Banner',
-    format: 'Display Banner (728x90)',
+    format: 'Display Leaderboard (728x90)',
     type: 'responsive',
     status: 'Active',
+    impressions: 28400,
+    clicks: 890,
     codeSnippet: `<script async src="https://cdn.admetricspro.com/v1/ad.js" data-ad-client="pub_99214" data-ad-slot="ad_unit_101"></script>`
   },
   {
@@ -73,6 +81,8 @@ const INITIAL_AD_UNITS = [
     format: 'Vertical Skyscraper (300x600)',
     type: 'banner',
     status: 'Active',
+    impressions: 20100,
+    clicks: 530,
     codeSnippet: `<script async src="https://cdn.admetricspro.com/v1/ad.js" data-ad-client="pub_99214" data-ad-slot="ad_unit_102"></script>`
   },
   {
@@ -80,9 +90,11 @@ const INITIAL_AD_UNITS = [
     siteId: 'site_2',
     siteName: 'Finance & Crypto Blog',
     name: 'In-Article Native Feed',
-    format: 'Native Fluid Feed',
+    format: 'In-Feed Native Responsive',
     type: 'native',
     status: 'Active',
+    impressions: 21300,
+    clicks: 980,
     codeSnippet: `<script async src="https://cdn.admetricspro.com/v1/ad.js" data-ad-client="pub_99214" data-ad-slot="ad_unit_103"></script>`
   }
 ];
@@ -100,7 +112,8 @@ const INITIAL_KYC = {
   country: 'United States',
   documentUploaded: true,
   documentFileName: 'gov_passport_scanned_id.pdf',
-  status: 'Approved', // Approved, Pending, Rejected
+  documentPreviewUrl: null,
+  status: 'Approved',
   submittedAt: '2026-02-01',
   verifiedAt: '2026-02-02'
 };
@@ -120,23 +133,22 @@ const INITIAL_PAYOUTS = [
   {
     id: 'pay_901',
     date: '2026-06-30',
-    amount: 1540.00,
-    method: 'Direct Wire (Bank of America)',
-    reference: 'TXN-882190-2026',
+    amount: 980.00,
+    method: 'Direct Wire (JPMorgan Chase)',
+    reference: 'FEDWIRE-882190-2026',
     status: 'Completed'
   },
   {
     id: 'pay_902',
     date: '2026-05-31',
-    amount: 980.50,
-    method: 'Direct Wire (Bank of America)',
-    reference: 'TXN-773120-2026',
+    amount: 540.00,
+    method: 'Direct Wire (JPMorgan Chase)',
+    reference: 'FEDWIRE-773120-2026',
     status: 'Completed'
   }
 ];
 
 export const AppProvider = ({ children }) => {
-  // Persistence state
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('admetrics_user');
     return saved ? JSON.parse(saved) : INITIAL_USER;
@@ -146,7 +158,9 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem('admetrics_admin_session') === 'true';
   });
 
-  const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, sites, adunits, kyc, payments, admin
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isLiveSimulating, setIsLiveSimulating] = useState(true);
+  const [liveLog, setLiveLog] = useState(null);
 
   const [sites, setSites] = useState(() => {
     const saved = localStorage.getItem('admetrics_sites');
@@ -179,79 +193,73 @@ export const AppProvider = ({ children }) => {
   });
 
   const [notifications, setNotifications] = useState([
-    { id: 1, text: 'Welcome to AdMetrics Pro! Complete your KYC to unlock direct bank wire payouts.', time: '2 hours ago', unread: true },
+    { id: 1, text: 'Welcome to AdMetrics Pro! Direct bank wire payouts are active.', time: '2 hours ago', unread: true },
     { id: 2, text: 'Site TechPulse Daily hit 48,000+ daily ad impressions!', time: '1 day ago', unread: false }
   ]);
 
-  // Sync to LocalStorage
-  useEffect(() => {
-    localStorage.setItem('admetrics_user', JSON.stringify(user));
-  }, [user]);
+  // Sync state to LocalStorage
+  useEffect(() => { localStorage.setItem('admetrics_user', JSON.stringify(user)); }, [user]);
+  useEffect(() => { localStorage.setItem('admetrics_sites', JSON.stringify(sites)); }, [sites]);
+  useEffect(() => { localStorage.setItem('admetrics_adunits', JSON.stringify(adUnits)); }, [adUnits]);
+  useEffect(() => { localStorage.setItem('admetrics_kyc', JSON.stringify(kycData)); }, [kycData]);
+  useEffect(() => { localStorage.setItem('admetrics_bank', JSON.stringify(bankData)); }, [bankData]);
+  useEffect(() => { localStorage.setItem('admetrics_payouts', JSON.stringify(payouts)); }, [payouts]);
+  useEffect(() => { localStorage.setItem('admetrics_admin_session', isAdminUnlocked ? 'true' : 'false'); }, [isAdminUnlocked]);
 
+  // REAL-TIME Impression Ticker & Revenue Simulator
   useEffect(() => {
-    localStorage.setItem('admetrics_sites', JSON.stringify(sites));
-  }, [sites]);
+    if (!isLiveSimulating) return;
 
-  useEffect(() => {
-    localStorage.setItem('admetrics_adunits', JSON.stringify(adUnits));
-  }, [adUnits]);
+    const interval = setInterval(() => {
+      setSites(prevSites => {
+        return prevSites.map(site => {
+          if (site.status !== 'Approved') return site;
 
-  useEffect(() => {
-    localStorage.setItem('admetrics_kyc', JSON.stringify(kycData));
-  }, [kycData]);
+          // Simulate 5 - 25 new impressions per tick
+          const newImp = Math.floor(Math.random() * 20) + 5;
+          const clickChance = Math.random() < 0.08 ? 1 : 0;
+          const addEarned = (newImp * site.cpm) / 1000;
 
-  useEffect(() => {
-    localStorage.setItem('admetrics_bank', JSON.stringify(bankData));
-  }, [bankData]);
+          return {
+            ...site,
+            dailyImpressions: site.dailyImpressions + newImp,
+            dailyClicks: site.dailyClicks + clickChance,
+            earnings: site.earnings + addEarned
+          };
+        });
+      });
+    }, 3000);
 
-  useEffect(() => {
-    localStorage.setItem('admetrics_payouts', JSON.stringify(payouts));
-  }, [payouts]);
+    return () => clearInterval(interval);
+  }, [isLiveSimulating]);
 
-  useEffect(() => {
-    localStorage.setItem('admetrics_admin_session', isAdminUnlocked ? 'true' : 'false');
-  }, [isAdminUnlocked]);
-
-  // Total Earnings Calculation
+  // Financial Calculations
   const totalEarnings = sites.reduce((acc, site) => acc + (site.earnings || 0), 0);
-  const currentBalance = totalEarnings - payouts.filter(p => p.status === 'Completed').reduce((acc, p) => acc + p.amount, 0);
+  const totalDisbursedPayouts = payouts
+    .filter(p => p.status === 'Completed')
+    .reduce((acc, p) => acc + p.amount, 0);
 
-  // Authentication & Admin PIN Handler
+  // Ensure balance is always positive and exact
+  const currentBalance = Math.max(0, totalEarnings - totalDisbursedPayouts);
+
+  // Admin PIN Gate Handler
   const verifyAdminPin = (enteredPin) => {
     if (enteredPin === MASTER_ADMIN_PIN) {
       setIsAdminUnlocked(true);
       setActiveTab('admin');
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 100,
+        spread: 80,
         origin: { y: 0.6 }
       });
       return { success: true };
     }
-    return { success: false, message: 'Invalid Admin Master PIN. Verification Failed.' };
+    return { success: false, message: 'Invalid Admin Master PIN. Access Denied.' };
   };
 
   const lockAdmin = () => {
     setIsAdminUnlocked(false);
-    if (activeTab === 'admin') {
-      setActiveTab('dashboard');
-    }
-  };
-
-  const loginUser = (email, name) => {
-    setUser({
-      id: `pub_${Math.floor(10000 + Math.random() * 90000)}`,
-      name: name || 'Publisher User',
-      email: email,
-      role: 'publisher',
-      accountStatus: 'Active',
-      joinedDate: new Date().toISOString().split('T')[0]
-    });
-  };
-
-  const logoutUser = () => {
-    setIsAdminUnlocked(false);
-    setActiveTab('dashboard');
+    if (activeTab === 'admin') setActiveTab('dashboard');
   };
 
   // Publisher Actions
@@ -266,7 +274,9 @@ export const AppProvider = ({ children }) => {
       dailyClicks: 0,
       cpm: systemSettings.defaultCpm,
       earnings: 0.00,
-      submittedAt: new Date().toISOString().split('T')[0]
+      submittedAt: new Date().toISOString().split('T')[0],
+      healthScore: 90,
+      sslVerified: true
     };
     setSites(prev => [newSite, ...prev]);
     return newSite;
@@ -282,10 +292,23 @@ export const AppProvider = ({ children }) => {
       format,
       type: type || 'banner',
       status: 'Active',
+      impressions: 0,
+      clicks: 0,
       codeSnippet: `<script async src="https://cdn.admetricspro.com/v1/ad.js" data-ad-client="${user.id}" data-ad-slot="ad_unit_${Date.now()}"></script>`
     };
     setAdUnits(prev => [newAdUnit, ...prev]);
     return newAdUnit;
+  };
+
+  const recordAdClick = (adUnitId) => {
+    setAdUnits(prev => prev.map(u => u.id === adUnitId ? { ...u, clicks: u.clicks + 1 } : u));
+    setSites(prev => prev.map(s => {
+      if (s.status === 'Approved') {
+        const bonus = (s.cpm * 0.15);
+        return { ...s, dailyClicks: s.dailyClicks + 1, earnings: s.earnings + bonus };
+      }
+      return s;
+    }));
   };
 
   const submitKyc = (formData) => {
@@ -310,21 +333,21 @@ export const AppProvider = ({ children }) => {
 
   const requestPayout = (amount) => {
     if (amount > currentBalance) {
-      throw new Error('Requested amount exceeds current available balance.');
+      throw new Error(`Requested payout ($${amount.toFixed(2)}) exceeds available balance ($${currentBalance.toFixed(2)}).`);
     }
     if (amount < bankData.payoutThreshold) {
-      throw new Error(`Minimum payout threshold is $${bankData.payoutThreshold}`);
+      throw new Error(`Minimum withdrawal threshold is $${bankData.payoutThreshold}`);
     }
     const newPayout = {
       id: `pay_${Math.floor(100 + Math.random() * 900)}`,
       date: new Date().toISOString().split('T')[0],
       amount: parseFloat(amount),
-      method: `Bank Wire (${bankData.bankName})`,
+      method: `Direct Wire (${bankData.bankName})`,
       reference: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
       status: 'Pending'
     };
     setPayouts(prev => [newPayout, ...prev]);
-    confetti({ particleCount: 50, spread: 60 });
+    confetti({ particleCount: 60, spread: 70 });
     return newPayout;
   };
 
@@ -343,6 +366,9 @@ export const AppProvider = ({ children }) => {
 
   const adminProcessPayout = (payoutId, status) => {
     setPayouts(prev => prev.map(p => p.id === payoutId ? { ...p, status } : p));
+    if (status === 'Completed') {
+      confetti({ particleCount: 90, spread: 80 });
+    }
   };
 
   return (
@@ -360,12 +386,13 @@ export const AppProvider = ({ children }) => {
       notifications,
       totalEarnings,
       currentBalance,
+      isLiveSimulating,
+      setIsLiveSimulating,
       verifyAdminPin,
       lockAdmin,
-      loginUser,
-      logoutUser,
       addWebsite,
       createAdUnit,
+      recordAdClick,
       submitKyc,
       updateBankDetails,
       requestPayout,

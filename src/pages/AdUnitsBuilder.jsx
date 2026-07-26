@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Code2, Plus, Copy, Check, Eye, Layout, Monitor, Smartphone, Sparkles, Layers } from 'lucide-react';
+import { Code2, Plus, Copy, Check, Eye, Layout, Monitor, Smartphone, Sparkles, Layers, MousePointerClick } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import confetti from 'canvas-confetti';
 
 export default function AdUnitsBuilder() {
-  const { sites, adUnits, createAdUnit } = useApp();
+  const { sites, adUnits, createAdUnit, recordAdClick } = useApp();
   const [selectedSiteId, setSelectedSiteId] = useState(sites[0]?.id || '');
   const [adName, setAdName] = useState('New Display Leaderboard');
-  const [formatType, setFormatType] = useState('Display Banner (728x90)');
+  const [formatType, setFormatType] = useState('Display Leaderboard (728x90)');
   const [copiedId, setCopiedId] = useState(null);
   const [previewTab, setPreviewTab] = useState('728x90');
+  const [clickMessage, setClickMessage] = useState('');
 
   const approvedSites = sites.filter(s => s.status === 'Approved');
 
@@ -17,13 +19,20 @@ export default function AdUnitsBuilder() {
     if (!selectedSiteId || !adName) return;
     createAdUnit(selectedSiteId, adName, formatType);
     setAdName('');
-    alert('Ad Unit created successfully! Copy your script tag below.');
+    alert('Ad Unit created successfully! Embed JavaScript code generated below.');
   };
 
   const copyCode = (id, snippet) => {
     navigator.clipboard.writeText(snippet);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleTestClick = (unitId) => {
+    recordAdClick(unitId || adUnits[0]?.id);
+    confetti({ particleCount: 40, spread: 50 });
+    setClickMessage('🎯 Dynamic RTB Ad Click Recorded! +$0.51 added to real-time earnings balance.');
+    setTimeout(() => setClickMessage(''), 3500);
   };
 
   return (
@@ -35,6 +44,16 @@ export default function AdUnitsBuilder() {
           Design custom ad units, grab async JavaScript code tags, and test live ad rendering in real-time.
         </p>
       </div>
+
+      {clickMessage && (
+        <div style={{
+          background: 'var(--accent-green-bg)', border: '1px solid rgba(16, 185, 129, 0.4)', color: 'var(--accent-green)',
+          padding: '0.85rem 1.25rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 700
+        }}>
+          <MousePointerClick size={20} />
+          <span>{clickMessage}</span>
+        </div>
+      )}
 
       <div className="grid-3" style={{ gridTemplateColumns: '1fr 2fr' }}>
         {/* Ad Unit Creator Form */}
@@ -108,11 +127,11 @@ export default function AdUnitsBuilder() {
           </form>
         </div>
 
-        {/* Live Ad Emulator Preview */}
+        {/* Live Interactive Ad Emulator Preview */}
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">
-              <Eye size={18} color="var(--accent-purple)" /> Interactive Ad Unit Renderer
+              <Eye size={18} color="var(--accent-purple)" /> Interactive Ad Unit Renderer (Click to Test)
             </h3>
             <div style={{ display: 'flex', gap: '0.4rem' }}>
               {['728x90', '300x250', '300x600', 'native'].map(p => (
@@ -129,13 +148,13 @@ export default function AdUnitsBuilder() {
           </div>
 
           <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-            Simulated programmatic ad rendering delivered via AdMetrics Pro RTB ad server:
+            Click on any live ad banner below to simulate real programmatic user engagement and live earnings:
           </p>
 
           {/* Ad Banners */}
           {previewTab === '728x90' && (
-            <div className="ad-emulator" style={{ height: '110px', background: 'linear-gradient(135deg, #1E293B, #0F172A)', border: '1px solid #3B82F6' }}>
-              <span className="ad-sponsor-label">Ads by AdMetrics Pro</span>
+            <div className="ad-emulator" onClick={() => handleTestClick('ad_unit_101')} style={{ height: '110px', background: 'linear-gradient(135deg, #1E293B, #0F172A)', border: '1px solid #3B82F6', cursor: 'pointer' }}>
+              <span className="ad-sponsor-label">Ads by AdMetrics Pro • Click to Test</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', width: '100%', padding: '0 1rem' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800 }}>
                   AWS
@@ -150,8 +169,8 @@ export default function AdUnitsBuilder() {
           )}
 
           {previewTab === '300x250' && (
-            <div className="ad-emulator" style={{ width: '300px', height: '250px', margin: '0 auto', background: 'linear-gradient(135deg, #1F2937, #111827)', border: '1px solid #10B981' }}>
-              <span className="ad-sponsor-label">Sponsored</span>
+            <div className="ad-emulator" onClick={() => handleTestClick('ad_unit_101')} style={{ width: '300px', height: '250px', margin: '0 auto', background: 'linear-gradient(135deg, #1F2937, #111827)', border: '1px solid #10B981', cursor: 'pointer' }}>
+              <span className="ad-sponsor-label">Sponsored • Click to Test</span>
               <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'linear-gradient(135deg, #10B981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.2rem', marginBottom: '0.75rem' }}>
                 💳
               </div>
@@ -162,8 +181,8 @@ export default function AdUnitsBuilder() {
           )}
 
           {previewTab === '300x600' && (
-            <div className="ad-emulator" style={{ width: '300px', height: '360px', margin: '0 auto', background: 'linear-gradient(180deg, #111827, #0B0F19)', border: '1px solid #8B5CF6' }}>
-              <span className="ad-sponsor-label">Promoted Content</span>
+            <div className="ad-emulator" onClick={() => handleTestClick('ad_unit_102')} style={{ width: '300px', height: '360px', margin: '0 auto', background: 'linear-gradient(180deg, #111827, #0B0F19)', border: '1px solid #8B5CF6', cursor: 'pointer' }}>
+              <span className="ad-sponsor-label">Promoted Content • Click to Test</span>
               <div style={{ width: '100%', height: '140px', background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, marginBottom: '1rem' }}>
                 🚀 AI Productivity Engine
               </div>
@@ -174,8 +193,8 @@ export default function AdUnitsBuilder() {
           )}
 
           {previewTab === 'native' && (
-            <div className="ad-emulator" style={{ background: '#111827', border: '1px solid var(--border-color)', textAlign: 'left', alignItems: 'flex-start', padding: '1rem' }}>
-              <span className="ad-sponsor-label">Recommended for you</span>
+            <div className="ad-emulator" onClick={() => handleTestClick('ad_unit_103')} style={{ background: '#111827', border: '1px solid var(--border-color)', textAlign: 'left', alignItems: 'flex-start', padding: '1rem', cursor: 'pointer' }}>
+              <span className="ad-sponsor-label">Recommended for you • Click to Test</span>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
                 <div style={{ width: '80px', height: '80px', borderRadius: '8px', background: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>📈</div>
                 <div>
@@ -192,7 +211,7 @@ export default function AdUnitsBuilder() {
       <div className="card" style={{ marginTop: '2rem' }}>
         <div className="card-header">
           <h3 className="card-title">
-            <Layers size={18} color="var(--accent-cyan)" /> Active Ad Units & JavaScript Snippets
+            <Layers size={18} color="var(--accent-cyan)" /> Active Ad Units & Real-Time Performance
           </h3>
         </div>
 
@@ -203,7 +222,8 @@ export default function AdUnitsBuilder() {
                 <th>Ad Unit Name</th>
                 <th>Assigned Website</th>
                 <th>Format</th>
-                <th>Status</th>
+                <th>Impressions</th>
+                <th>Recorded Clicks</th>
                 <th>Embed Script Code</th>
                 <th>Action</th>
               </tr>
@@ -216,10 +236,9 @@ export default function AdUnitsBuilder() {
                   <td>
                     <span className="badge badge-info">{unit.format}</span>
                   </td>
-                  <td>
-                    <span className="badge badge-success">Active</span>
-                  </td>
-                  <td style={{ maxWidth: '380px' }}>
+                  <td style={{ fontFamily: 'var(--font-mono)' }}>{(unit.impressions || 12000).toLocaleString()}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-amber)', fontWeight: 700 }}>{unit.clicks}</td>
+                  <td style={{ maxWidth: '340px' }}>
                     <div style={{ background: '#090D16', padding: '0.4rem 0.6rem', borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#A5B4FC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {unit.codeSnippet}
                     </div>
