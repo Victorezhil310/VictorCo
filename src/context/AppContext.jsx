@@ -6,6 +6,19 @@ const AppContext = createContext();
 const MASTER_ADMIN_PIN = "20032004";
 const OFFICIAL_ADSENSE_CLIENT = "ca-pub-9747982919206794";
 
+// Safe LocalStorage Reader Helper to prevent crashes
+const safeStorageRead = (key, fallback) => {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return fallback;
+    const parsed = JSON.parse(saved);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch (e) {
+    console.warn(`SafeStorage error reading ${key}:`, e);
+    return fallback;
+  }
+};
+
 // Real Publisher Account Profile
 const REAL_PUBLISHER_USER = {
   id: OFFICIAL_ADSENSE_CLIENT,
@@ -13,10 +26,65 @@ const REAL_PUBLISHER_USER = {
   email: 'victorezhil310@gmail.com',
   role: 'publisher',
   accountStatus: 'Active',
-  joinedDate: new Date().toISOString().split('T')[0]
+  joinedDate: new Date().toISOString().split('T')[0],
+  balance: 0.00,
+  coins: 0,
+  diamonds: 0,
+  adsWatchedToday: 0
 };
 
-// Initial Approved Property
+// Initial Video Ads Library (Earn Money By Watching Ads!)
+const INITIAL_VIDEO_ADS = [
+  {
+    id: 'ad_vid_1',
+    title: 'AWS Cloud Services - 30s High Reward',
+    sponsor: 'Amazon Web Services',
+    durationSeconds: 30,
+    rewardAmount: 0.75,
+    coinsReward: 150,
+    diamondsReward: 5,
+    category: 'Technology & Cloud',
+    thumbnailBg: 'linear-gradient(135deg, #FF9900, #FF5500)',
+    watchCount: 1420
+  },
+  {
+    id: 'ad_vid_2',
+    title: 'Stripe Fintech Payments - 15s Quick Earn',
+    sponsor: 'Stripe Payments',
+    durationSeconds: 15,
+    rewardAmount: 0.50,
+    coinsReward: 100,
+    diamondsReward: 3,
+    category: 'Finance & Banking',
+    thumbnailBg: 'linear-gradient(135deg, #635BFF, #3225B4)',
+    watchCount: 3890
+  },
+  {
+    id: 'ad_vid_3',
+    title: 'Free Fire Gaming Trailer & Diamonds',
+    sponsor: 'Garena Free Fire',
+    durationSeconds: 45,
+    rewardAmount: 1.20,
+    coinsReward: 250,
+    diamondsReward: 20,
+    category: 'Gaming & Esport',
+    thumbnailBg: 'linear-gradient(135deg, #F59E0B, #DC2626)',
+    watchCount: 9410
+  },
+  {
+    id: 'ad_vid_4',
+    title: 'Google AI Studio - 20s Tech Ad',
+    sponsor: 'Google AI Studio',
+    durationSeconds: 20,
+    rewardAmount: 0.65,
+    coinsReward: 130,
+    diamondsReward: 4,
+    category: 'AI & Developer',
+    thumbnailBg: 'linear-gradient(135deg, #10B981, #059669)',
+    watchCount: 2150
+  }
+];
+
 const INITIAL_PROPERTIES = [
   {
     id: 'site_1',
@@ -60,6 +128,35 @@ const INITIAL_AD_UNITS = [
   }
 ];
 
+const INITIAL_TASKS = [
+  {
+    id: 'task_daily',
+    title: 'Daily Check-in Bonus',
+    desc: 'Log in every day to collect free cash reward.',
+    rewardCash: 1.00,
+    rewardCoins: 200,
+    completed: false
+  },
+  {
+    id: 'task_watch_5',
+    title: 'Watch 5 Video Ads Challenge',
+    desc: 'Complete watching 5 video ads today.',
+    rewardCash: 2.50,
+    rewardCoins: 500,
+    completed: false,
+    progress: 0,
+    target: 5
+  },
+  {
+    id: 'task_refer',
+    title: 'Invite Friends & Earn Commission',
+    desc: 'Get $5.00 for every friend who signs up.',
+    rewardCash: 5.00,
+    rewardCoins: 1000,
+    completed: false
+  }
+];
+
 const INITIAL_KYC = {
   userId: OFFICIAL_ADSENSE_CLIENT,
   fullName: 'Victor Alexander',
@@ -96,74 +193,79 @@ const INITIAL_BANK = {
 const INITIAL_PAYOUTS = [];
 
 export const AppProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('admetrics_user');
-    return saved ? JSON.parse(saved) : REAL_PUBLISHER_USER;
-  });
-
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
-    return localStorage.getItem('admetrics_admin_session') === 'true';
-  });
-
+  const [user, setUser] = useState(() => safeStorageRead('admetrics_user', REAL_PUBLISHER_USER));
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => localStorage.getItem('admetrics_admin_session') === 'true');
   const [activeTab, setActiveTab] = useState('watch');
+  const [activeWatchingAd, setActiveWatchingAd] = useState(null);
   const [isLiveSimulating, setIsLiveSimulating] = useState(true);
 
   // Multi-Language & Multi-Currency State
   const [currentLang, setCurrentLang] = useState(() => localStorage.getItem('admetrics_lang') || 'en');
   const [currentCurrency, setCurrentCurrency] = useState(() => localStorage.getItem('admetrics_currency') || 'USD');
 
-  const [sites, setSites] = useState(() => {
-    const saved = localStorage.getItem('admetrics_sites');
-    return saved ? JSON.parse(saved) : INITIAL_PROPERTIES;
-  });
+  const [videoAds, setVideoAds] = useState(() => safeStorageRead('victorco_ads', INITIAL_VIDEO_ADS));
+  const [tasks, setTasks] = useState(() => safeStorageRead('victorco_tasks', INITIAL_TASKS));
+  const [sites, setSites] = useState(() => safeStorageRead('admetrics_sites', INITIAL_PROPERTIES));
+  const [adUnits, setAdUnits] = useState(() => safeStorageRead('admetrics_adunits', INITIAL_AD_UNITS));
+  const [kycData, setKycData] = useState(() => safeStorageRead('admetrics_kyc', INITIAL_KYC));
+  const [bankData, setBankData] = useState(() => safeStorageRead('admetrics_bank', INITIAL_BANK));
+  const [payouts, setPayouts] = useState(() => safeStorageRead('admetrics_payouts', INITIAL_PAYOUTS));
 
-  const [adUnits, setAdUnits] = useState(() => {
-    const saved = localStorage.getItem('admetrics_adunits');
-    return saved ? JSON.parse(saved) : INITIAL_AD_UNITS;
-  });
+  const [dailyLog, setDailyLog] = useState(() => safeStorageRead('admetrics_daily_log', {
+    Mon: 0.00, Tue: 0.00, Wed: 0.00, Thu: 0.00, Fri: 0.00, Sat: 0.00, Sun: 0.00
+  }));
 
-  const [kycData, setKycData] = useState(() => {
-    const saved = localStorage.getItem('admetrics_kyc');
-    return saved ? JSON.parse(saved) : INITIAL_KYC;
-  });
+  const [systemSettings, setSystemSettings] = useState(() => safeStorageRead('admetrics_settings', {
+    defaultCpm: 4.50, networkFillRate: 98.5, autoApproveSites: true, antiBotProtection: true
+  }));
 
-  const [bankData, setBankData] = useState(() => {
-    const saved = localStorage.getItem('admetrics_bank');
-    return saved ? JSON.parse(saved) : INITIAL_BANK;
-  });
-
-  const [payouts, setPayouts] = useState(() => {
-    const saved = localStorage.getItem('admetrics_payouts');
-    return saved ? JSON.parse(saved) : INITIAL_PAYOUTS;
-  });
-
-  const [dailyLog, setDailyLog] = useState(() => {
-    const saved = localStorage.getItem('admetrics_daily_log');
-    return saved ? JSON.parse(saved) : {
-      Mon: 0.00, Tue: 0.00, Wed: 0.00, Thu: 0.00, Fri: 0.00, Sat: 0.00, Sun: 0.00
-    };
-  });
-
-  const [systemSettings, setSystemSettings] = useState(() => {
-    const saved = localStorage.getItem('admetrics_settings');
-    return saved ? JSON.parse(saved) : { defaultCpm: 4.50, networkFillRate: 98.5, autoApproveSites: true, antiBotProtection: true };
-  });
+  const [liveTicker, setLiveTicker] = useState([
+    { id: 1, text: '@Alex withdrew $50.00 via PayPal', time: '2m ago' },
+    { id: 2, text: '@Sarah completed Free Fire ad (+ $1.20)', time: '5m ago' },
+    { id: 3, text: '@Rahul withdrew 100 Diamonds', time: '12m ago' }
+  ]);
 
   const [notifications, setNotifications] = useState([
     { id: 1, text: 'Real Google AdSense Publisher Client ca-pub-9747982919206794 connected & live!', time: 'Just now', unread: true }
   ]);
 
-  // Sync state to LocalStorage
-  useEffect(() => { localStorage.setItem('admetrics_user', JSON.stringify(user)); }, [user]);
-  useEffect(() => { localStorage.setItem('admetrics_sites', JSON.stringify(sites)); }, [sites]);
-  useEffect(() => { localStorage.setItem('admetrics_adunits', JSON.stringify(adUnits)); }, [adUnits]);
-  useEffect(() => { localStorage.setItem('admetrics_kyc', JSON.stringify(kycData)); }, [kycData]);
-  useEffect(() => { localStorage.setItem('admetrics_bank', JSON.stringify(bankData)); }, [bankData]);
-  useEffect(() => { localStorage.setItem('admetrics_payouts', JSON.stringify(payouts)); }, [payouts]);
-  useEffect(() => { localStorage.setItem('admetrics_daily_log', JSON.stringify(dailyLog)); }, [dailyLog]);
-  useEffect(() => { localStorage.setItem('admetrics_lang', currentLang); }, [currentLang]);
-  useEffect(() => { localStorage.setItem('admetrics_currency', currentCurrency); }, [currentCurrency]);
-  useEffect(() => { localStorage.setItem('admetrics_admin_session', isAdminUnlocked ? 'true' : 'false'); }, [isAdminUnlocked]);
+  // Sync state to LocalStorage with try/catch safeguard
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_user', JSON.stringify(user)); } catch (e) {}
+  }, [user]);
+  useEffect(() => {
+    try { localStorage.setItem('victorco_ads', JSON.stringify(videoAds)); } catch (e) {}
+  }, [videoAds]);
+  useEffect(() => {
+    try { localStorage.setItem('victorco_tasks', JSON.stringify(tasks)); } catch (e) {}
+  }, [tasks]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_sites', JSON.stringify(sites)); } catch (e) {}
+  }, [sites]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_adunits', JSON.stringify(adUnits)); } catch (e) {}
+  }, [adUnits]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_kyc', JSON.stringify(kycData)); } catch (e) {}
+  }, [kycData]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_bank', JSON.stringify(bankData)); } catch (e) {}
+  }, [bankData]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_payouts', JSON.stringify(payouts)); } catch (e) {}
+  }, [payouts]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_daily_log', JSON.stringify(dailyLog)); } catch (e) {}
+  }, [dailyLog]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_lang', currentLang); } catch (e) {}
+  }, [currentLang]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_currency', currentCurrency); } catch (e) {}
+  }, [currentCurrency]);
+  useEffect(() => {
+    try { localStorage.setItem('admetrics_admin_session', isAdminUnlocked ? 'true' : 'false'); } catch (e) {}
+  }, [isAdminUnlocked]);
 
   // Real-Time AdSense Impression & Revenue Engine
   useEffect(() => {
@@ -212,10 +314,54 @@ export const AppProvider = ({ children }) => {
     setKycData(INITIAL_KYC);
     setBankData(INITIAL_BANK);
     setPayouts(INITIAL_PAYOUTS);
+    setVideoAds(INITIAL_VIDEO_ADS);
+    setTasks(INITIAL_TASKS);
     setDailyLog({ Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 });
     setIsLiveSimulating(true);
-    localStorage.clear();
-    confetti({ particleCount: 60, spread: 70 });
+    try { localStorage.clear(); } catch (e) {}
+    try { confetti({ particleCount: 60, spread: 70 }); } catch (e) {}
+  };
+
+  // Complete Video Watch Reward
+  const claimVideoReward = (adId) => {
+    const ad = videoAds.find(a => a.id === adId);
+    if (!ad) return;
+
+    setUser(prev => ({
+      ...prev,
+      balance: (prev.balance || 0) + ad.rewardAmount,
+      coins: (prev.coins || 0) + ad.coinsReward,
+      diamonds: (prev.diamonds || 0) + ad.diamondsReward,
+      adsWatchedToday: (prev.adsWatchedToday || 0) + 1
+    }));
+
+    setVideoAds(prev => prev.map(a => a.id === adId ? { ...a, watchCount: a.watchCount + 1 } : a));
+
+    setTasks(prev => prev.map(t => {
+      if (t.id === 'task_watch_5') {
+        const newProg = Math.min(t.target, (t.progress || 0) + 1);
+        return { ...t, progress: newProg, completed: newProg >= t.target };
+      }
+      return t;
+    }));
+
+    try { confetti({ particleCount: 80, spread: 70 }); } catch (e) {}
+    setActiveWatchingAd(null);
+  };
+
+  // Claim Daily Task
+  const claimTask = (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || task.completed) return;
+
+    setUser(prev => ({
+      ...prev,
+      balance: (prev.balance || 0) + task.rewardCash,
+      coins: (prev.coins || 0) + task.rewardCoins
+    }));
+
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true } : t));
+    try { confetti({ particleCount: 60, spread: 60 }); } catch (e) {}
   };
 
   // Financial Calculations
@@ -224,14 +370,14 @@ export const AppProvider = ({ children }) => {
     .filter(p => p.status === 'Completed')
     .reduce((acc, p) => acc + p.amount, 0);
 
-  const currentBalance = Math.max(0, totalEarnings - totalDisbursedPayouts);
+  const currentBalance = Math.max(0, (user.balance || 0) + totalEarnings - totalDisbursedPayouts);
 
   // Master Admin PIN Handler
   const verifyAdminPin = (enteredPin) => {
     if (enteredPin === MASTER_ADMIN_PIN) {
       setIsAdminUnlocked(true);
       setActiveTab('admin');
-      confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } });
+      try { confetti({ particleCount: 90, spread: 80, origin: { y: 0.6 } }); } catch (e) {}
       return { success: true };
     }
     return { success: false, message: 'Invalid Master Admin PIN. Access Denied.' };
@@ -330,33 +476,51 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
-  const requestPayout = (amount, method) => {
+  const requestPayout = (amount, method, details) => {
     if (amount > currentBalance) {
       throw new Error(`Requested payout ($${amount.toFixed(2)}) exceeds current available balance ($${currentBalance.toFixed(2)}).`);
     }
-    if (amount < bankData.payoutThreshold) {
-      throw new Error(`Minimum withdrawal threshold is $${bankData.payoutThreshold}`);
+    if (amount < 5.00) {
+      throw new Error('Minimum withdrawal threshold is $5.00.');
     }
 
     let payoutMethodLabel = method || bankData.payoutMethod || 'Direct Wire';
-    if (payoutMethodLabel === 'PayPal') payoutMethodLabel = `PayPal (${bankData.paypalEmail || 'Verified Email'})`;
+    if (payoutMethodLabel === 'PayPal') payoutMethodLabel = `PayPal (${bankData.paypalEmail || details || 'Email Verified'})`;
     else if (payoutMethodLabel === 'Crypto') payoutMethodLabel = `Crypto ${bankData.cryptoNetwork || 'USDT'} (${bankData.cryptoWallet ? bankData.cryptoWallet.substring(0, 8) : 'Wallet'}...)`;
     else payoutMethodLabel = `Bank Wire (${bankData.bankName || 'Linked Bank'})`;
 
     const newPayout = {
       id: `pay_${Math.floor(100 + Math.random() * 900)}`,
       date: new Date().toISOString().split('T')[0],
+      requestDate: new Date().toISOString().split('T')[0],
       amount: parseFloat(amount),
       method: payoutMethodLabel,
+      details: details || bankData.accountNumber || 'Account Verified',
       reference: `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
       status: 'Pending'
     };
     setPayouts(prev => [newPayout, ...prev]);
-    confetti({ particleCount: 60, spread: 70 });
+    try { confetti({ particleCount: 60, spread: 70 }); } catch (e) {}
     return newPayout;
   };
 
-  // Master Admin Actions
+  const adminApprovePayout = (payoutId, status) => {
+    setPayouts(prev => prev.map(p => p.id === payoutId ? { ...p, status } : p));
+    if (status === 'Completed' || status === 'Approved') {
+      try { confetti({ particleCount: 90, spread: 80 }); } catch (e) {}
+    }
+  };
+
+  const adminAddVideoAd = (adData) => {
+    const newAd = {
+      id: `ad_vid_${Date.now()}`,
+      ...adData,
+      watchCount: 0,
+      thumbnailBg: 'linear-gradient(135deg, #3B82F6, #8B5CF6)'
+    };
+    setVideoAds(prev => [newAd, ...prev]);
+  };
+
   const adminApproveSite = (siteId, status) => {
     setSites(prev => prev.map(s => s.id === siteId ? { ...s, status } : s));
   };
@@ -369,19 +533,16 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
-  const adminProcessPayout = (payoutId, status) => {
-    setPayouts(prev => prev.map(p => p.id === payoutId ? { ...p, status } : p));
-    if (status === 'Completed') {
-      confetti({ particleCount: 90, spread: 80 });
-    }
-  };
-
   return (
     <AppContext.Provider value={{
       user,
+      videoAds,
+      tasks,
       isAdminUnlocked,
       activeTab,
       setActiveTab,
+      activeWatchingAd,
+      setActiveWatchingAd,
       currentLang,
       setCurrentLang,
       currentCurrency,
@@ -394,6 +555,7 @@ export const AppProvider = ({ children }) => {
       dailyLog,
       systemSettings,
       notifications,
+      liveTicker,
       totalEarnings,
       currentBalance,
       isLiveSimulating,
@@ -407,9 +569,12 @@ export const AppProvider = ({ children }) => {
       submitKyc,
       updateBankDetails,
       requestPayout,
+      claimVideoReward,
+      claimTask,
+      adminApprovePayout,
+      adminAddVideoAd,
       adminApproveSite,
       adminApproveKyc,
-      adminProcessPayout,
       setSystemSettings,
       OFFICIAL_ADSENSE_CLIENT
     }}>
