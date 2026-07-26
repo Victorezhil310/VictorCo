@@ -2,12 +2,11 @@ import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import WatchAndEarn from './pages/WatchAndEarn';
-import TaskWall from './pages/TaskWall';
+import AdvertiserPortal from './pages/AdvertiserPortal';
 import WalletPayouts from './pages/WalletPayouts';
-import Leaderboard from './pages/Leaderboard';
 import AdminPortal from './pages/AdminPortal';
 import TermsAndPrivacy from './pages/TermsAndPrivacy';
-import WatchVideoModal from './components/WatchVideoModal';
+import AdPlayer from './components/AdPlayer';
 import { Zap, ShieldCheck } from 'lucide-react';
 
 function AppContent() {
@@ -18,18 +17,17 @@ function AppContent() {
       <Navbar />
 
       <main className="main-content">
-        {activeTab === 'watch' && <WatchAndEarn />}
-        {activeTab === 'tasks' && <TaskWall />}
+        {activeTab === 'earn' && <WatchAndEarn />}
+        {activeTab === 'advertiser' && <AdvertiserPortal />}
         {activeTab === 'wallet' && <WalletPayouts />}
-        {activeTab === 'leaderboard' && <Leaderboard />}
         {activeTab === 'admin' && <AdminPortal />}
         {activeTab === 'terms' && <TermsAndPrivacy />}
       </main>
 
-      {/* Interactive Video Stream Countdown Modal */}
-      <WatchVideoModal />
+      {/* Direct Advertiser Ad Player Engine Modal */}
+      <AdPlayer />
 
-      {/* Dribbble Style Footer */}
+      {/* Platform Footer */}
       <footer style={{
         background: 'var(--bg-surface)',
         borderTop: '1px solid var(--border-color)',
@@ -42,14 +40,14 @@ function AppContent() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <div style={{
-              width: '28px', height: '28px', borderRadius: '6px', background: 'linear-gradient(135deg, #EC4899, #8B5CF6)',
+              width: '28px', height: '28px', borderRadius: '6px', background: 'linear-gradient(135deg, #3B82F6, #10B981)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
             }}>
               <Zap size={16} fill="white" />
             </div>
-            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>VictorCo</span>
+            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>VictorMedia</span>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              © 2026 VictorCo. Inspired by Dribbble Watch & Earn Rewards.
+              © 2026 VictorMedia. Real Rewarded Ad Serving Network.
             </span>
           </div>
 
@@ -59,7 +57,7 @@ function AppContent() {
             </span>
             <span>•</span>
             <span onClick={() => setActiveTab('terms')} style={{ cursor: 'pointer', color: 'var(--primary)' }}>
-              Privacy & Anti-Cheat Policy
+              Advertiser Policy & Guidelines
             </span>
             <span>•</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
