@@ -1,35 +1,43 @@
 import React, { useState } from 'react';
 import { 
   TrendingUp, DollarSign, Eye, MousePointer, Globe, ArrowUpRight, 
-  CheckCircle2, Clock, PlusCircle, ArrowRight, ShieldCheck, Download, Sparkles
+  CheckCircle2, Clock, PlusCircle, ArrowRight, ShieldCheck, Download, Sparkles, Play, ShieldAlert, CreditCard
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function PublisherDashboard() {
   const { 
     user, sites, adUnits, totalEarnings, currentBalance, 
-    kycData, setActiveTab 
+    kycData, bankData, setActiveTab, isLiveSimulating, setIsLiveSimulating 
   } = useApp();
 
   const [timeRange, setTimeRange] = useState('7d');
 
   // Daily Chart Data
   const chartData = [
-    { day: 'Mon', revenue: 42.50, impressions: 12400 },
-    { day: 'Tue', revenue: 58.20, impressions: 16800 },
-    { day: 'Wed', revenue: 76.90, impressions: 21500 },
-    { day: 'Thu', revenue: 64.10, impressions: 18200 },
-    { day: 'Fri', revenue: 89.40, impressions: 25400 },
-    { day: 'Sat', revenue: 112.80, impressions: 31200 },
-    { day: 'Sun', revenue: 95.30, impressions: 27800 },
+    { day: 'Mon', revenue: totalEarnings > 0 ? (totalEarnings * 0.12) : 0, impressions: 1200 },
+    { day: 'Tue', revenue: totalEarnings > 0 ? (totalEarnings * 0.15) : 0, impressions: 1800 },
+    { day: 'Wed', revenue: totalEarnings > 0 ? (totalEarnings * 0.18) : 0, impressions: 2100 },
+    { day: 'Thu', revenue: totalEarnings > 0 ? (totalEarnings * 0.14) : 0, impressions: 1500 },
+    { day: 'Fri', revenue: totalEarnings > 0 ? (totalEarnings * 0.20) : 0, impressions: 2500 },
+    { day: 'Sat', revenue: totalEarnings > 0 ? (totalEarnings * 0.22) : 0, impressions: 3100 },
+    { day: 'Sun', revenue: totalEarnings > 0 ? (totalEarnings * 0.10) : 0, impressions: 1400 },
   ];
 
-  const maxRevenue = Math.max(...chartData.map(d => d.revenue));
+  const maxRevenue = Math.max(...chartData.map(d => d.revenue), 10);
 
   const totalImpressions = sites.reduce((sum, s) => sum + (s.dailyImpressions || 0), 0);
   const totalClicks = sites.reduce((sum, s) => sum + (s.dailyClicks || 0), 0);
   const avgCpm = sites.length > 0 ? (sites.reduce((sum, s) => sum + (s.cpm || 0), 0) / sites.length).toFixed(2) : '0.00';
   const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
+
+  // Onboarding Step Progress
+  const hasApprovedSite = sites.some(s => s.status === 'Approved');
+  const hasKycSubmitted = kycData.status === 'Approved' || kycData.status === 'Pending';
+  const hasBankLinked = bankData.accountNumber !== '';
+
+  const completedStepsCount = (hasApprovedSite ? 1 : 0) + (hasKycSubmitted ? 1 : 0) + (hasBankLinked ? 1 : 0);
+  const onboardingPct = Math.round((completedStepsCount / 3) * 100);
 
   return (
     <div className="dashboard-page">
@@ -57,19 +65,24 @@ export default function PublisherDashboard() {
               </span>
             ) : (
               <span className="badge badge-warning" onClick={() => setActiveTab('kyc')} style={{ cursor: 'pointer' }}>
-                <Clock size={12} /> Pending KYC Verification
+                <Clock size={12} /> {kycData.status === 'Pending' ? 'KYC Under Review' : 'Setup KYC & Tax'}
               </span>
             )}
           </div>
           <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.5px' }}>
-            Welcome back, {user.name}! 🚀
+            Welcome, {user.name}! 🚀
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            Your ad inventory is actively serving high-CPM bidding impressions across {sites.filter(s => s.status === 'Approved').length} approved websites.
+            {totalEarnings === 0 ? 'Your publisher account is open and ready. Complete onboarding steps to start live ad streaming.' : `Serving programmatic RTB ad impressions across ${sites.filter(s => s.status === 'Approved').length} approved properties.`}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', zIndex: 2 }}>
+          {!isLiveSimulating && (
+            <button className="btn btn-primary" onClick={() => setIsLiveSimulating(true)}>
+              <Play size={16} /> Start Live Ads Engine
+            </button>
+          )}
           <button className="btn btn-secondary" onClick={() => setActiveTab('sites')}>
             <Globe size={16} /> Manage Websites
           </button>
@@ -78,6 +91,86 @@ export default function PublisherDashboard() {
           </button>
         </div>
       </div>
+
+      {/* Onboarding Checklist Card (Shows when starting from 0) */}
+      {onboardingPct < 100 && (
+        <div className="card" style={{ marginBottom: '2rem', border: '1px solid rgba(59, 130, 246, 0.4)', background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(30, 41, 59, 0.9))' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <span className="badge badge-info" style={{ marginBottom: '0.4rem' }}>Account Setup Guide</span>
+              <h3 className="card-title">Publisher Account Activation Checklist ({onboardingPct}% Complete)</h3>
+            </div>
+            <div style={{ width: '120px', height: '8px', background: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{ width: `${onboardingPct}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease' }}></div>
+            </div>
+          </div>
+
+          <div className="grid-3" style={{ gap: '1rem' }}>
+            {/* Step 1 */}
+            <div style={{
+              background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: hasApprovedSite ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-color)',
+              display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
+            }}>
+              <div style={{ color: hasApprovedSite ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                {hasApprovedSite ? <CheckCircle2 size={22} /> : <Globe size={22} />}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>1. Connect Domain Website</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  {hasApprovedSite ? 'Domain approved & connected.' : 'Add your website domain URL.'}
+                </div>
+                {!hasApprovedSite && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('sites')} style={{ marginTop: '0.6rem' }}>
+                    Add Website
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div style={{
+              background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: hasKycSubmitted ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-color)',
+              display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
+            }}>
+              <div style={{ color: hasKycSubmitted ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                {hasKycSubmitted ? <CheckCircle2 size={22} /> : <ShieldAlert size={22} />}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>2. Complete KYC Formalities</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  {hasKycSubmitted ? 'KYC details submitted.' : 'Upload Gov Photo ID proof & Tax ID.'}
+                </div>
+                {!hasKycSubmitted && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('kyc')} style={{ marginTop: '0.6rem' }}>
+                    Submit KYC
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div style={{
+              background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: hasBankLinked ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-color)',
+              display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
+            }}>
+              <div style={{ color: hasBankLinked ? 'var(--accent-green)' : 'var(--text-muted)' }}>
+                {hasBankLinked ? <CheckCircle2 size={22} /> : <CreditCard size={22} />}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>3. Link Bank Account</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  {hasBankLinked ? 'Bank wire account linked.' : 'Set SWIFT/IBAN wire account details.'}
+                </div>
+                {!hasBankLinked && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('payments')} style={{ marginTop: '0.6rem' }}>
+                    Link Bank Account
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Metric Cards Grid */}
       <div className="grid-4" style={{ marginBottom: '2rem' }}>
@@ -89,11 +182,11 @@ export default function PublisherDashboard() {
               <DollarSign size={20} />
             </div>
           </div>
-          <div className="stat-value" style={{ color: 'var(--accent-green)' }}>
+          <div className="stat-value" style={{ color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
             ${totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="stat-change up">
-            <TrendingUp size={14} /> +14.8% vs last month
+            <TrendingUp size={14} /> Real-time programmatic balance
           </div>
         </div>
 
@@ -105,11 +198,11 @@ export default function PublisherDashboard() {
               <Eye size={20} />
             </div>
           </div>
-          <div className="stat-value">
+          <div className="stat-value" style={{ fontFamily: 'var(--font-mono)' }}>
             {totalImpressions.toLocaleString()}
           </div>
           <div className="stat-change up">
-            <TrendingUp size={14} /> +8.3% real-time fill rate
+            <TrendingUp size={14} /> RTB live auction bids
           </div>
         </div>
 
@@ -121,11 +214,11 @@ export default function PublisherDashboard() {
               <Sparkles size={20} />
             </div>
           </div>
-          <div className="stat-value" style={{ color: 'var(--accent-purple)' }}>
+          <div className="stat-value" style={{ color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>
             ${avgCpm}
           </div>
           <div className="stat-change up">
-            <TrendingUp size={14} /> High-demand programmatic RTB
+            <TrendingUp size={14} /> Global CPM yield price
           </div>
         </div>
 
@@ -137,7 +230,7 @@ export default function PublisherDashboard() {
               <MousePointer size={20} />
             </div>
           </div>
-          <div className="stat-value" style={{ color: 'var(--accent-amber)' }}>
+          <div className="stat-value" style={{ color: 'var(--accent-amber)', fontFamily: 'var(--font-mono)' }}>
             {avgCtr}%
           </div>
           <div className="stat-change up">
@@ -177,14 +270,14 @@ export default function PublisherDashboard() {
           {/* SVG Line & Bar Chart */}
           <div style={{ height: '240px', display: 'flex', alignItems: 'flex-end', gap: '1rem', padding: '1rem 0 0.5rem' }}>
             {chartData.map((d, i) => {
-              const heightPct = (d.revenue / maxRevenue) * 180;
+              const heightPct = maxRevenue > 0 ? (d.revenue / maxRevenue) * 180 : 5;
               return (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%', justifyContent: 'flex-end' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
-                    ${d.revenue.toFixed(1)}
+                    ${d.revenue.toFixed(2)}
                   </span>
                   <div style={{
-                    width: '100%', maxWidth: '38px', height: `${heightPct}px`,
+                    width: '100%', maxWidth: '38px', height: `${Math.max(heightPct, 6)}px`,
                     background: 'linear-gradient(180deg, var(--primary), rgba(59, 130, 246, 0.2))',
                     borderRadius: '6px 6px 2px 2px', transition: 'height 0.4s ease',
                     boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)'
@@ -198,14 +291,14 @@ export default function PublisherDashboard() {
           </div>
         </div>
 
-        {/* Quick Action & Balance Withdrawal Card */}
+        {/* Available Balance Withdrawal Card */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <h3 className="card-title">Available Payout Balance</h3>
             <p className="card-subtitle">Processed earnings ready for direct bank wire transfer</p>
             
             <div style={{ margin: '1.5rem 0' }}>
-              <span style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)', letterSpacing: '-1px' }}>
+              <span style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)', letterSpacing: '-1px' }}>
                 ${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
@@ -230,6 +323,7 @@ export default function PublisherDashboard() {
             className="btn btn-primary" 
             style={{ width: '100%' }}
             onClick={() => setActiveTab('payments')}
+            disabled={currentBalance < bankData.payoutThreshold}
           >
             <span>Request Bank Wire Payout</span>
             <ArrowRight size={16} />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Zap, LayoutDashboard, Globe, Code2, ShieldAlert, CreditCard, 
-  ShieldCheck, Lock, Unlock, Bell, User, LogOut, PlusCircle, CheckCircle2, Scale, Play, Pause 
+  ShieldCheck, Lock, Unlock, Bell, User, LogOut, PlusCircle, CheckCircle2, Scale, Play, Pause, RotateCcw 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import AdminPinModal from './AdminPinModal';
@@ -9,7 +9,7 @@ import AdminPinModal from './AdminPinModal';
 export default function Navbar() {
   const { 
     user, isAdminUnlocked, activeTab, setActiveTab, lockAdmin, 
-    currentBalance, kycData, notifications, isLiveSimulating, setIsLiveSimulating 
+    currentBalance, kycData, notifications, isLiveSimulating, setIsLiveSimulating, resetToZeroAccount 
   } = useApp();
 
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
@@ -38,9 +38,9 @@ export default function Navbar() {
                 <span className="logo-badge">PRO</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '1px' }}>
-                <span className="pulse-dot"></span>
-                <p style={{ fontSize: '0.65rem', color: 'var(--accent-green)', fontWeight: 700, letterSpacing: '0.3px' }}>
-                  REAL-TIME RTB ENGINE ACTIVE
+                <span className="pulse-dot" style={{ backgroundColor: isLiveSimulating ? 'var(--accent-green)' : 'var(--accent-amber)' }}></span>
+                <p style={{ fontSize: '0.65rem', color: isLiveSimulating ? 'var(--accent-green)' : 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.3px' }}>
+                  {isLiveSimulating ? 'REAL-TIME RTB ENGINE ACTIVE' : 'LIVE STREAM READY'}
                 </p>
               </div>
             </div>
@@ -99,15 +99,27 @@ export default function Navbar() {
 
           {/* Right Header Actions */}
           <div className="nav-actions">
-            {/* Live Ticker Toggle */}
+            {/* Start Live Stream Button */}
             <button 
               className="btn btn-secondary btn-sm"
               onClick={() => setIsLiveSimulating(!isLiveSimulating)}
               title={isLiveSimulating ? "Pause live RTB impression stream" : "Start live RTB impression stream"}
-              style={{ color: isLiveSimulating ? 'var(--accent-green)' : 'var(--text-muted)' }}
+              style={{ color: isLiveSimulating ? 'var(--accent-green)' : 'var(--primary)', borderColor: isLiveSimulating ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-color)' }}
             >
               {isLiveSimulating ? <Pause size={14} /> : <Play size={14} />}
-              <span style={{ fontSize: '0.75rem' }}>{isLiveSimulating ? 'Live Stream' : 'Paused'}</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>
+                {isLiveSimulating ? 'Pause Stream' : 'Start Live Ads Stream'}
+              </span>
+            </button>
+
+            {/* Reset to Fresh 0 State Button */}
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={resetToZeroAccount}
+              title="Reset account to clean $0.00 state"
+              style={{ padding: '0.5rem', color: 'var(--text-muted)' }}
+            >
+              <RotateCcw size={15} />
             </button>
 
             {/* Unpaid Balance Badge */}
@@ -160,7 +172,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Admin Login Button */}
+            {/* Admin PIN Login Button */}
             {isAdminUnlocked ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <button 
