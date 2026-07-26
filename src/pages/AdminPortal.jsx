@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  ShieldCheck, CheckCircle2, XCircle, Clock, Globe, FileText, 
-  CreditCard, Sliders, AlertTriangle, Lock, UserCheck, DollarSign, Sparkles, LogOut, ShieldAlert 
-} from 'lucide-react';
+import { ShieldCheck, CheckCircle2, XCircle, Play, Plus, CreditCard, Lock, Sparkles, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { formatCurrency } from '../i18n/translations';
 
 export default function AdminPortal() {
   const { 
-    isAdminUnlocked, lockAdmin, sites, kycData, payouts, 
-    systemSettings, adminApproveSite, adminApproveKyc, 
-    adminProcessPayout, setSystemSettings, currentCurrency 
+    isAdminUnlocked, lockAdmin, videoAds, payouts, adminApprovePayout, adminAddVideoAd 
   } = useApp();
 
-  const [activeAdminTab, setActiveAdminTab] = useState('sites');
-  const [cpmInput, setCpmInput] = useState(systemSettings.defaultCpm);
-  const [fillRateInput, setFillRateInput] = useState(systemSettings.networkFillRate);
+  const [titleInput, setTitleInput] = useState('');
+  const [sponsorInput, setSponsorInput] = useState('');
+  const [cashRewardInput, setCashRewardInput] = useState(0.75);
+  const [durationInput, setDurationInput] = useState(30);
 
   if (!isAdminUnlocked) {
     return (
@@ -26,26 +21,34 @@ export default function AdminPortal() {
         }}>
           <Lock size={32} />
         </div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>Master Admin Area Locked</h2>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>VictorCo Master Admin Locked</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.5rem 0 1.5rem' }}>
-          This portal requires Master Security PIN authorization (`20032004`). Click Admin Login above to enter PIN.
+          This master portal requires Security PIN authorization (`20032004`). Click Admin Login above to unlock.
         </p>
       </div>
     );
   }
 
-  const pendingSites = sites.filter(s => s.status === 'Pending');
-  const pendingPayouts = payouts.filter(p => p.status === 'Pending');
-
-  const handleSaveSettings = (e) => {
+  const handleAddAd = (e) => {
     e.preventDefault();
-    setSystemSettings({
-      ...systemSettings,
-      defaultCpm: parseFloat(cpmInput) || 4.50,
-      networkFillRate: parseFloat(fillRateInput) || 98.5
+    if (!titleInput || !sponsorInput) return;
+
+    adminAddVideoAd({
+      title: titleInput,
+      sponsor: sponsorInput,
+      rewardAmount: parseFloat(cashRewardInput) || 0.75,
+      coinsReward: Math.round(cashRewardInput * 200),
+      diamondsReward: 5,
+      durationSeconds: parseInt(durationInput) || 30,
+      category: 'Sponsored Ads'
     });
-    alert('Master Global Network & Anti-Bot Rules saved!');
+
+    setTitleInput('');
+    setSponsorInput('');
+    alert('New Sponsored Video Ad added live to the Watch & Earn gallery!');
   };
+
+  const pendingPayouts = payouts.filter(p => p.status === 'Pending');
 
   return (
     <div>
@@ -70,11 +73,11 @@ export default function AdminPortal() {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white' }}>Master Network Admin Portal</h1>
-              <span className="badge badge-success">Session Active (PIN 20032004)</span>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white' }}>VictorCo Master Admin Portal</h1>
+              <span className="badge badge-success">Master PIN Active (20032004)</span>
             </div>
             <p style={{ fontSize: '0.85rem', color: '#D8B4FE', marginTop: '0.2rem' }}>
-              Master PIN authenticated • Governing site compliance, identity verification, and multi-channel payouts.
+              Control video ad bounties, review user payouts, and manage reward rates.
             </p>
           </div>
         </div>
@@ -84,303 +87,98 @@ export default function AdminPortal() {
         </button>
       </div>
 
-      {/* Admin Stat Cards */}
-      <div className="grid-4" style={{ marginBottom: '2rem' }}>
-        <div className="stat-box">
-          <div className="stat-header">
-            <span>Pending Property Audits</span>
-            <Globe size={18} color="var(--accent-amber)" />
-          </div>
-          <div className="stat-value" style={{ color: 'var(--accent-amber)' }}>
-            {pendingSites.length}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Properties awaiting review</div>
-        </div>
-
-        <div className="stat-box">
-          <div className="stat-header">
-            <span>KYC Compliance Audits</span>
-            <FileText size={18} color={kycData.status === 'Pending' ? 'var(--accent-amber)' : 'var(--accent-green)'} />
-          </div>
-          <div className="stat-value" style={{ color: kycData.status === 'Pending' ? 'var(--accent-amber)' : 'var(--accent-green)' }}>
-            {kycData.status === 'Pending' ? 1 : 0}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Identity documents queue</div>
-        </div>
-
-        <div className="stat-box">
-          <div className="stat-header">
-            <span>Pending Withdrawal Requests</span>
-            <CreditCard size={18} color="var(--primary)" />
-          </div>
-          <div className="stat-value" style={{ color: 'var(--primary)' }}>
-            {pendingPayouts.length}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Wire & PayPal dispatches</div>
-        </div>
-
-        <div className="stat-box">
-          <div className="stat-header">
-            <span>Network Floor CPM</span>
-            <Sparkles size={18} color="var(--accent-purple)" />
-          </div>
-          <div className="stat-value" style={{ color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>
-            {formatCurrency(systemSettings.defaultCpm, currentCurrency)}
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>RTB auction floor price</div>
-        </div>
-      </div>
-
-      {/* Admin Sub-Tabs */}
-      <div className="tabs-container">
-        <button 
-          className={`tab-btn ${activeAdminTab === 'sites' ? 'active' : ''}`}
-          onClick={() => setActiveAdminTab('sites')}
-        >
-          Property Approvals ({pendingSites.length})
-        </button>
-        <button 
-          className={`tab-btn ${activeAdminTab === 'kyc' ? 'active' : ''}`}
-          onClick={() => setActiveAdminTab('kyc')}
-        >
-          KYC Audit {kycData.status === 'Pending' && '🔴'}
-        </button>
-        <button 
-          className={`tab-btn ${activeAdminTab === 'payouts' ? 'active' : ''}`}
-          onClick={() => setActiveAdminTab('payouts')}
-        >
-          Payout Releases ({pendingPayouts.length})
-        </button>
-        <button 
-          className={`tab-btn ${activeAdminTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveAdminTab('settings')}
-        >
-          Network Rules & Anti-Bot Shield
-        </button>
-      </div>
-
-      {/* TAB 1: SITE APPROVALS */}
-      {activeAdminTab === 'sites' && (
+      <div className="grid-2" style={{ gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* Add New Video Ad Form */}
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Publisher Property Approval Desk</h3>
+            <h3 className="card-title">
+              <Plus size={18} color="var(--primary)" /> Add Sponsored Video Ad Bounty
+            </h3>
+          </div>
+
+          <form onSubmit={handleAddAd}>
+            <div className="form-group">
+              <label className="form-label">Ad Title</label>
+              <input type="text" className="form-input" placeholder="e.g. Tesla CyberTruck 30s Ad" value={titleInput} onChange={e => setTitleInput(e.target.value)} required />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Sponsor Brand Name</label>
+              <input type="text" className="form-input" placeholder="e.g. Tesla Motors" value={sponsorInput} onChange={e => setSponsorInput(e.target.value)} required />
+            </div>
+
+            <div className="grid-2" style={{ gap: '1rem' }}>
+              <div className="form-group">
+                <label className="form-label">Cash Reward ($ USD)</label>
+                <input type="number" step="0.05" className="form-input" value={cashRewardInput} onChange={e => setCashRewardInput(e.target.value)} required />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Watch Duration (Seconds)</label>
+                <input type="number" className="form-input" value={durationInput} onChange={e => setDurationInput(e.target.value)} required />
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-admin" style={{ width: '100%', marginTop: '1rem' }}>
+              Publish Video Ad to Gallery
+            </button>
+          </form>
+        </div>
+
+        {/* Withdrawal Approvals Console */}
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">
+              <CreditCard size={18} color="var(--accent-green)" /> Pending User Withdrawals ({pendingPayouts.length})
+            </h3>
           </div>
 
           <div className="table-container">
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Property Name</th>
-                  <th>Domain / App ID</th>
-                  <th>Type</th>
-                  <th>Category</th>
-                  <th>Status</th>
-                  <th>Admin Decision</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sites.map(site => (
-                  <tr key={site.id}>
-                    <td style={{ fontWeight: 700 }}>{site.name}</td>
-                    <td>
-                      <a href={site.url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'none' }}>
-                        {site.url}
-                      </a>
-                    </td>
-                    <td><span className="badge badge-info">{site.type || 'Website'}</span></td>
-                    <td>{site.category}</td>
-                    <td>
-                      {site.status === 'Approved' ? (
-                        <span className="badge badge-success">Approved</span>
-                      ) : site.status === 'Pending' ? (
-                        <span className="badge badge-warning">Pending Audit</span>
-                      ) : (
-                        <span className="badge badge-danger">Rejected</span>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button 
-                          className="btn btn-primary btn-sm"
-                          style={{ background: 'var(--accent-green)', borderColor: 'var(--accent-green)' }}
-                          onClick={() => adminApproveSite(site.id, 'Approved')}
-                        >
-                          <CheckCircle2 size={14} /> Approve
-                        </button>
-                        <button 
-                          className="btn btn-danger btn-sm"
-                          onClick={() => adminApproveSite(site.id, 'Rejected')}
-                        >
-                          <XCircle size={14} /> Reject
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 2: KYC DESK */}
-      {activeAdminTab === 'kyc' && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Publisher KYC & Formalities Audit</h3>
-          </div>
-
-          <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
-            <div className="grid-2" style={{ gap: '1rem', marginBottom: '1.25rem' }}>
-              <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Publisher Legal Name</span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>{kycData.fullName || 'Not Provided'}</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tax ID (TIN / SSN)</span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>{kycData.taxId || 'Pending'}</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID Document Type</span>
-                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>{kycData.idType} ({kycData.idNumber || 'No ID'})</div>
-              </div>
-              <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Uploaded Document Proof</span>
-                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--primary)' }}>📄 {kycData.documentFileName || 'id_proof.pdf'}</div>
-              </div>
-            </div>
-
-            <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Status: </span>
-                <strong style={{ color: kycData.status === 'Approved' ? 'var(--accent-green)' : 'var(--accent-amber)' }}>{kycData.status}</strong>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                  className="btn btn-primary btn-sm"
-                  style={{ background: 'var(--accent-green)', borderColor: 'var(--accent-green)' }}
-                  onClick={() => adminApproveKyc('Approved')}
-                >
-                  <CheckCircle2 size={14} /> Approve Identity
-                </button>
-                <button 
-                  className="btn btn-danger btn-sm"
-                  onClick={() => adminApproveKyc('Rejected')}
-                >
-                  <XCircle size={14} /> Reject Proof
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: PAYOUTS */}
-      {activeAdminTab === 'payouts' && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Withdrawal Dispatch Desk</h3>
-          </div>
-
-          <div className="table-container">
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  <th>Request Ref</th>
-                  <th>Date</th>
+                  <th>Ref #</th>
                   <th>Amount</th>
-                  <th>Channel Method</th>
-                  <th>Status</th>
+                  <th>Method</th>
+                  <th>Details</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {payouts.map(p => (
-                  <tr key={p.id}>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{p.reference}</td>
-                    <td>{p.date}</td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--accent-green)' }}>
-                      {formatCurrency(p.amount, currentCurrency)}
-                    </td>
-                    <td>{p.method}</td>
-                    <td>
-                      {p.status === 'Completed' ? (
-                        <span className="badge badge-success">Completed</span>
-                      ) : (
-                        <span className="badge badge-warning">Pending Transfer</span>
-                      )}
-                    </td>
-                    <td>
-                      {p.status === 'Pending' ? (
-                        <button 
-                          className="btn btn-primary btn-sm"
-                          style={{ background: 'var(--accent-green)', borderColor: 'var(--accent-green)' }}
-                          onClick={() => adminProcessPayout(p.id, 'Completed')}
-                        >
-                          <CheckCircle2 size={14} /> Mark Funds Sent
-                        </button>
-                      ) : (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Dispatched</span>
-                      )}
+                {payouts.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                      No withdrawal requests in queue.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  payouts.map(p => (
+                    <tr key={p.id}>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{p.reference}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-green)', fontWeight: 800 }}>${p.amount.toFixed(2)}</td>
+                      <td>{p.method}</td>
+                      <td>{p.details}</td>
+                      <td>
+                        {p.status === 'Pending' ? (
+                          <button 
+                            className="btn btn-primary btn-sm"
+                            style={{ background: 'var(--accent-green)', borderColor: 'var(--accent-green)' }}
+                            onClick={() => adminApprovePayout(p.id, 'Approved')}
+                          >
+                            <CheckCircle2 size={14} /> Approve Payout
+                          </button>
+                        ) : (
+                          <span className="badge badge-success">Approved</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
-      )}
-
-      {/* TAB 4: SETTINGS */}
-      {activeAdminTab === 'settings' && (
-        <div className="card" style={{ maxWidth: '600px' }}>
-          <div className="card-header">
-            <h3 className="card-title">Ad Network Yield & Anti-Bot Protection Rules</h3>
-          </div>
-
-          <form onSubmit={handleSaveSettings}>
-            <div className="form-group">
-              <label className="form-label">Global Network Default Floor CPM ($ USD)</label>
-              <input 
-                type="number"
-                step="0.10"
-                className="form-input"
-                value={cpmInput}
-                onChange={e => setCpmInput(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Programmatic RTB Fill Rate Target (%)</label>
-              <input 
-                type="number"
-                step="0.5"
-                className="form-input"
-                value={fillRateInput}
-                onChange={e => setFillRateInput(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
-              <input 
-                type="checkbox"
-                id="antiBot"
-                checked={systemSettings.antiBotProtection}
-                onChange={e => setSystemSettings({ ...systemSettings, antiBotProtection: e.target.checked })}
-                style={{ width: '18px', height: '18px' }}
-              />
-              <label htmlFor="antiBot" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer' }}>
-                Enable Anti-Bot & Invalid Click Filtering Shield
-              </label>
-            </div>
-
-            <button type="submit" className="btn btn-admin" style={{ width: '100%', marginTop: '1.25rem' }}>
-              Save Master Network Rules
-            </button>
-          </form>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

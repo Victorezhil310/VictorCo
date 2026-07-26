@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   TrendingUp, DollarSign, Eye, MousePointer, Globe, ArrowUpRight, 
-  CheckCircle2, Clock, PlusCircle, ArrowRight, ShieldCheck, Download, Sparkles, Play, ShieldAlert, CreditCard
+  CheckCircle2, Clock, PlusCircle, ArrowRight, ShieldCheck, Download, Sparkles, Play, ShieldAlert, CreditCard, RefreshCw
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LANGUAGES, formatCurrency } from '../i18n/translations';
@@ -9,7 +9,7 @@ import { LANGUAGES, formatCurrency } from '../i18n/translations';
 export default function PublisherDashboard() {
   const { 
     user, sites, adUnits, totalEarnings, currentBalance, 
-    kycData, bankData, setActiveTab, isLiveSimulating, setIsLiveSimulating,
+    kycData, bankData, dailyLog, setActiveTab, isLiveSimulating, setIsLiveSimulating,
     currentLang, currentCurrency 
   } = useApp();
 
@@ -17,18 +17,14 @@ export default function PublisherDashboard() {
 
   const [timeRange, setTimeRange] = useState('7d');
 
-  // Daily Chart Data
-  const chartData = [
-    { day: 'Mon', revenue: totalEarnings > 0 ? (totalEarnings * 0.12) : 0, impressions: 1200 },
-    { day: 'Tue', revenue: totalEarnings > 0 ? (totalEarnings * 0.15) : 0, impressions: 1800 },
-    { day: 'Wed', revenue: totalEarnings > 0 ? (totalEarnings * 0.18) : 0, impressions: 2100 },
-    { day: 'Thu', revenue: totalEarnings > 0 ? (totalEarnings * 0.14) : 0, impressions: 1500 },
-    { day: 'Fri', revenue: totalEarnings > 0 ? (totalEarnings * 0.20) : 0, impressions: 2500 },
-    { day: 'Sat', revenue: totalEarnings > 0 ? (totalEarnings * 0.22) : 0, impressions: 3100 },
-    { day: 'Sun', revenue: totalEarnings > 0 ? (totalEarnings * 0.10) : 0, impressions: 1400 },
-  ];
+  // Dynamic Chart Data strictly from real event log!
+  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const chartData = daysOfWeek.map(d => ({
+    day: d,
+    revenue: dailyLog[d] || 0.00
+  }));
 
-  const maxRevenue = Math.max(...chartData.map(d => d.revenue), 10);
+  const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1.00);
 
   const totalImpressions = sites.reduce((sum, s) => sum + (s.dailyImpressions || 0), 0);
   const totalClicks = sites.reduce((sum, s) => sum + (s.dailyClicks || 0), 0);
@@ -61,7 +57,7 @@ export default function PublisherDashboard() {
         <div style={{ zIndex: 2 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Publisher Monetization Hub
+              Real-Time Publisher Monetization Engine
             </span>
             {kycData.status === 'Approved' ? (
               <span className="badge badge-success">
@@ -77,16 +73,14 @@ export default function PublisherDashboard() {
             Welcome, {user.name}! 🚀
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-            {totalEarnings === 0 ? 'Your publisher account is open and ready. Complete onboarding steps to start live ad streaming.' : `Serving programmatic RTB ad impressions across ${sites.filter(s => s.status === 'Approved').length} approved properties.`}
+            {totalEarnings === 0 ? 'Account active. Turn on Live Stream or click Ad Units to generate real revenue live.' : `Serving real programmatic RTB ad bids across ${sites.filter(s => s.status === 'Approved').length} approved properties.`}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', zIndex: 2 }}>
-          {!isLiveSimulating && (
-            <button className="btn btn-primary" onClick={() => setIsLiveSimulating(true)}>
-              <Play size={16} /> {t.startLiveStream}
-            </button>
-          )}
+          <button className={`btn ${isLiveSimulating ? 'btn-secondary' : 'btn-primary'}`} onClick={() => setIsLiveSimulating(!isLiveSimulating)}>
+            <Play size={16} /> {isLiveSimulating ? t.pauseStream : t.startLiveStream}
+          </button>
           <button className="btn btn-secondary" onClick={() => setActiveTab('sites')}>
             <Globe size={16} /> {t.websites}
           </button>
@@ -173,9 +167,9 @@ export default function PublisherDashboard() {
         </div>
       )}
 
-      {/* Metric Cards Grid */}
+      {/* Dynamic Metric Cards Grid */}
       <div className="grid-4" style={{ marginBottom: '2rem' }}>
-        {/* Card 1: Total Earnings in Selected Currency */}
+        {/* Card 1: Total Lifetime Revenue */}
         <div className="stat-box">
           <div className="stat-header">
             <span>{t.lifetimeRevenue}</span>
@@ -187,7 +181,7 @@ export default function PublisherDashboard() {
             {formatCurrency(totalEarnings, currentCurrency)}
           </div>
           <div className="stat-change up">
-            <TrendingUp size={14} /> Real-time programmatic balance
+            <TrendingUp size={14} /> Real-time programmatic log
           </div>
         </div>
 
@@ -203,7 +197,7 @@ export default function PublisherDashboard() {
             {totalImpressions.toLocaleString()}
           </div>
           <div className="stat-change up">
-            <TrendingUp size={14} /> RTB live auction bids
+            <TrendingUp size={14} /> RTB auction ad bids
           </div>
         </div>
 
@@ -219,7 +213,7 @@ export default function PublisherDashboard() {
             {formatCurrency(avgCpm, currentCurrency)}
           </div>
           <div className="stat-change up">
-            <TrendingUp size={14} /> Global CPM yield price
+            <TrendingUp size={14} /> Property CPM floor price
           </div>
         </div>
 
@@ -235,21 +229,21 @@ export default function PublisherDashboard() {
             {avgCtr}%
           </div>
           <div className="stat-change up">
-            <TrendingUp size={14} /> {totalClicks.toLocaleString()} total ad clicks
+            <TrendingUp size={14} /> {totalClicks.toLocaleString()} recorded ad clicks
           </div>
         </div>
       </div>
 
       {/* Main Chart & Side Info Grid */}
       <div className="grid-3" style={{ gridTemplateColumns: '2fr 1fr', marginBottom: '2rem' }}>
-        {/* Revenue Analytics Chart */}
+        {/* Revenue Analytics Chart (Dynamic from Event Log!) */}
         <div className="card">
           <div className="card-header">
             <div>
               <h3 className="card-title">
-                <TrendingUp size={18} color="var(--primary)" /> Revenue Trends & Earnings Breakdown
+                <TrendingUp size={18} color="var(--primary)" /> Real-Time Weekly Revenue Log
               </h3>
-              <p className="card-subtitle">Daily programmatic ad payout performance</p>
+              <p className="card-subtitle">Daily programmatic ad payout revenue generated live</p>
             </div>
             <div style={{ display: 'flex', gap: '0.35rem', background: 'var(--bg-card)', padding: '0.2rem', borderRadius: 'var(--radius-md)' }}>
               {['7d', '30d', '90d'].map(r => (
@@ -268,20 +262,21 @@ export default function PublisherDashboard() {
             </div>
           </div>
 
-          {/* SVG Line & Bar Chart */}
+          {/* Dynamic SVG Line & Bar Chart */}
           <div style={{ height: '240px', display: 'flex', alignItems: 'flex-end', gap: '1rem', padding: '1rem 0 0.5rem' }}>
             {chartData.map((d, i) => {
-              const heightPct = maxRevenue > 0 ? (d.revenue / maxRevenue) * 180 : 5;
+              const heightPct = maxRevenue > 0 ? (d.revenue / maxRevenue) * 180 : 0;
               return (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%', justifyContent: 'flex-end' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
                     {formatCurrency(d.revenue, currentCurrency)}
                   </span>
                   <div style={{
-                    width: '100%', maxWidth: '38px', height: `${Math.max(heightPct, 6)}px`,
-                    background: 'linear-gradient(180deg, var(--primary), rgba(59, 130, 246, 0.2))',
+                    width: '100%', maxWidth: '38px', height: `${Math.max(heightPct, 4)}px`,
+                    background: d.revenue > 0 ? 'linear-gradient(180deg, var(--accent-green), rgba(16, 185, 129, 0.2))' : 'var(--bg-card)',
                     borderRadius: '6px 6px 2px 2px', transition: 'height 0.4s ease',
-                    boxShadow: '0 4px 10px rgba(59, 130, 246, 0.3)'
+                    border: '1px solid var(--border-color)',
+                    boxShadow: d.revenue > 0 ? '0 4px 10px rgba(16, 185, 129, 0.3)' : 'none'
                   }}></div>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
                     {d.day}
