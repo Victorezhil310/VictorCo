@@ -1,9 +1,10 @@
 import React from 'react';
 import { Play, Sparkles, Flame, Coins, Gem, DollarSign, Award, Clock, ArrowUpRight, TrendingUp } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import RealGoogleAdSlot from '../components/RealGoogleAdSlot';
 
 export default function WatchAndEarn() {
-  const { videoAds, setActiveWatchingAd, liveTicker, user } = useApp();
+  const { videoAds, setActiveWatchingAd, liveTicker, user, OFFICIAL_ADSENSE_CLIENT } = useApp();
 
   return (
     <div>
@@ -13,7 +14,7 @@ export default function WatchAndEarn() {
         border: '1px solid rgba(236, 72, 153, 0.4)',
         borderRadius: 'var(--radius-lg)',
         padding: '1.5rem 2rem',
-        marginBottom: '2rem',
+        marginBottom: '1.5rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -29,10 +30,10 @@ export default function WatchAndEarn() {
           </div>
           <div>
             <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              VictorCo Daily Watch & Earn Bounties
+              Official Google AdSense Publisher: {OFFICIAL_ADSENSE_CLIENT}
             </span>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', marginTop: '0.2rem' }}>
-              Earn Money by Watching Sponsored Video Ads 🎉
+              VictorCo Live AdSense & Watch Rewards Engine 🎉
             </h2>
           </div>
         </div>
@@ -47,13 +48,20 @@ export default function WatchAndEarn() {
         </div>
       </div>
 
+      {/* Official Real Live Google AdSense Banner Slot */}
+      <RealGoogleAdSlot 
+        adSlot="984210942"
+        adFormat="auto"
+        style={{ display: 'block', minHeight: '90px' }}
+      />
+
       {/* Live Community Activity Ticker */}
       <div style={{
         background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)',
-        padding: '0.65rem 1rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden'
+        padding: '0.65rem 1rem', margin: '1.5rem 0 2rem', display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden'
       }}>
         <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-green)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-          <Flame size={14} style={{ display: 'inline', marginRight: '4px' }} /> LIVE REWARDS FEED
+          <Flame size={14} style={{ display: 'inline', marginRight: '4px' }} /> LIVE ADSENSE REWARDS FEED
         </span>
         <div style={{ display: 'flex', gap: '2rem', overflowX: 'auto', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
           {liveTicker.map(t => (
@@ -66,7 +74,7 @@ export default function WatchAndEarn() {
 
       {/* Section Header */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>Available Video Ads</h2>
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-main)' }}>Available Video & Display Ads</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
           Select any sponsored video ad, watch until the timer finishes, and collect instant cash & coin bounties!
         </p>
