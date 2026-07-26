@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, CheckCircle2, XCircle, Clock, Globe, FileText, 
-  CreditCard, Sliders, AlertTriangle, Lock, UserCheck, DollarSign, Sparkles, LogOut 
+  CreditCard, Sliders, AlertTriangle, Lock, UserCheck, DollarSign, Sparkles, LogOut, ShieldAlert 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { formatCurrency } from '../i18n/translations';
 
 export default function AdminPortal() {
   const { 
     isAdminUnlocked, lockAdmin, sites, kycData, payouts, 
     systemSettings, adminApproveSite, adminApproveKyc, 
-    adminProcessPayout, setSystemSettings 
+    adminProcessPayout, setSystemSettings, currentCurrency 
   } = useApp();
 
-  const [activeAdminTab, setActiveAdminTab] = useState('sites'); // sites, kyc, payouts, settings
+  const [activeAdminTab, setActiveAdminTab] = useState('sites');
   const [cpmInput, setCpmInput] = useState(systemSettings.defaultCpm);
   const [fillRateInput, setFillRateInput] = useState(systemSettings.networkFillRate);
 
@@ -27,7 +28,7 @@ export default function AdminPortal() {
         </div>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>Master Admin Area Locked</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '0.5rem 0 1.5rem' }}>
-          This portal requires Master Security PIN authorization. Click Admin Login above to enter PIN.
+          This portal requires Master Security PIN authorization (`20032004`). Click Admin Login above to enter PIN.
         </p>
       </div>
     );
@@ -43,7 +44,7 @@ export default function AdminPortal() {
       defaultCpm: parseFloat(cpmInput) || 4.50,
       networkFillRate: parseFloat(fillRateInput) || 98.5
     });
-    alert('Global Network Settings saved!');
+    alert('Master Global Network & Anti-Bot Rules saved!');
   };
 
   return (
@@ -70,10 +71,10 @@ export default function AdminPortal() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white' }}>Master Network Admin Portal</h1>
-              <span className="badge badge-success">Session Active</span>
+              <span className="badge badge-success">Session Active (PIN 20032004)</span>
             </div>
             <p style={{ fontSize: '0.85rem', color: '#D8B4FE', marginTop: '0.2rem' }}>
-              Master PIN authenticated • Governing site compliance, identity verification, and bank payouts.
+              Master PIN authenticated • Governing site compliance, identity verification, and multi-channel payouts.
             </p>
           </div>
         </div>
@@ -87,13 +88,13 @@ export default function AdminPortal() {
       <div className="grid-4" style={{ marginBottom: '2rem' }}>
         <div className="stat-box">
           <div className="stat-header">
-            <span>Pending Domain Audits</span>
+            <span>Pending Property Audits</span>
             <Globe size={18} color="var(--accent-amber)" />
           </div>
           <div className="stat-value" style={{ color: 'var(--accent-amber)' }}>
             {pendingSites.length}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Websites awaiting approval</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Properties awaiting review</div>
         </div>
 
         <div className="stat-box">
@@ -109,13 +110,13 @@ export default function AdminPortal() {
 
         <div className="stat-box">
           <div className="stat-header">
-            <span>Pending Bank Payouts</span>
+            <span>Pending Withdrawal Requests</span>
             <CreditCard size={18} color="var(--primary)" />
           </div>
           <div className="stat-value" style={{ color: 'var(--primary)' }}>
             {pendingPayouts.length}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Wire transfers to release</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Wire & PayPal dispatches</div>
         </div>
 
         <div className="stat-box">
@@ -123,8 +124,8 @@ export default function AdminPortal() {
             <span>Network Floor CPM</span>
             <Sparkles size={18} color="var(--accent-purple)" />
           </div>
-          <div className="stat-value" style={{ color: 'var(--accent-purple)' }}>
-            ${systemSettings.defaultCpm.toFixed(2)}
+          <div className="stat-value" style={{ color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>
+            {formatCurrency(systemSettings.defaultCpm, currentCurrency)}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>RTB auction floor price</div>
         </div>
@@ -136,25 +137,25 @@ export default function AdminPortal() {
           className={`tab-btn ${activeAdminTab === 'sites' ? 'active' : ''}`}
           onClick={() => setActiveAdminTab('sites')}
         >
-          Domain Approvals ({pendingSites.length})
+          Property Approvals ({pendingSites.length})
         </button>
         <button 
           className={`tab-btn ${activeAdminTab === 'kyc' ? 'active' : ''}`}
           onClick={() => setActiveAdminTab('kyc')}
         >
-          KYC Compliance Audit {kycData.status === 'Pending' && '🔴'}
+          KYC Audit {kycData.status === 'Pending' && '🔴'}
         </button>
         <button 
           className={`tab-btn ${activeAdminTab === 'payouts' ? 'active' : ''}`}
           onClick={() => setActiveAdminTab('payouts')}
         >
-          Bank Payout Releases ({pendingPayouts.length})
+          Payout Releases ({pendingPayouts.length})
         </button>
         <button 
           className={`tab-btn ${activeAdminTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveAdminTab('settings')}
         >
-          Network Controls & Settings
+          Network Rules & Anti-Bot Shield
         </button>
       </div>
 
@@ -162,18 +163,18 @@ export default function AdminPortal() {
       {activeAdminTab === 'sites' && (
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Publisher Domain Approval Desk</h3>
+            <h3 className="card-title">Publisher Property Approval Desk</h3>
           </div>
 
           <div className="table-container">
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Website Title</th>
-                  <th>URL Domain</th>
+                  <th>Property Name</th>
+                  <th>Domain / App ID</th>
+                  <th>Type</th>
                   <th>Category</th>
-                  <th>Submitted Date</th>
-                  <th>Current Status</th>
+                  <th>Status</th>
                   <th>Admin Decision</th>
                 </tr>
               </thead>
@@ -186,8 +187,8 @@ export default function AdminPortal() {
                         {site.url}
                       </a>
                     </td>
+                    <td><span className="badge badge-info">{site.type || 'Website'}</span></td>
                     <td>{site.category}</td>
-                    <td>{site.submittedAt || site.verifiedAt || '2026-02-01'}</td>
                     <td>
                       {site.status === 'Approved' ? (
                         <span className="badge badge-success">Approved</span>
@@ -226,32 +227,32 @@ export default function AdminPortal() {
       {activeAdminTab === 'kyc' && (
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Publisher KYC & ID Formalities Review</h3>
+            <h3 className="card-title">Publisher KYC & Formalities Audit</h3>
           </div>
 
           <div style={{ background: 'var(--bg-card)', padding: '1.5rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
             <div className="grid-2" style={{ gap: '1rem', marginBottom: '1.25rem' }}>
               <div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Publisher Legal Name</span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>{kycData.fullName}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)' }}>{kycData.fullName || 'Not Provided'}</div>
               </div>
               <div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Tax ID (TIN / SSN)</span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>{kycData.taxId}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>{kycData.taxId || 'Pending'}</div>
               </div>
               <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID Document Type & No</span>
-                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>{kycData.idType} ({kycData.idNumber})</div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID Document Type</span>
+                <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>{kycData.idType} ({kycData.idNumber || 'No ID'})</div>
               </div>
               <div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Uploaded Document File</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Uploaded Document Proof</span>
                 <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--primary)' }}>📄 {kycData.documentFileName || 'id_proof.pdf'}</div>
               </div>
             </div>
 
             <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Current Status: </span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Status: </span>
                 <strong style={{ color: kycData.status === 'Approved' ? 'var(--accent-green)' : 'var(--accent-amber)' }}>{kycData.status}</strong>
               </div>
 
@@ -267,7 +268,7 @@ export default function AdminPortal() {
                   className="btn btn-danger btn-sm"
                   onClick={() => adminApproveKyc('Rejected')}
                 >
-                  <XCircle size={14} /> Reject Document
+                  <XCircle size={14} /> Reject Proof
                 </button>
               </div>
             </div>
@@ -275,11 +276,11 @@ export default function AdminPortal() {
         </div>
       )}
 
-      {/* TAB 3: BANK PAYOUTS */}
+      {/* TAB 3: PAYOUTS */}
       {activeAdminTab === 'payouts' && (
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Bank Wire Payout Dispatch Desk</h3>
+            <h3 className="card-title">Withdrawal Dispatch Desk</h3>
           </div>
 
           <div className="table-container">
@@ -289,7 +290,7 @@ export default function AdminPortal() {
                   <th>Request Ref</th>
                   <th>Date</th>
                   <th>Amount</th>
-                  <th>Payout Method</th>
+                  <th>Channel Method</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -299,13 +300,15 @@ export default function AdminPortal() {
                   <tr key={p.id}>
                     <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{p.reference}</td>
                     <td>{p.date}</td>
-                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--accent-green)' }}>${p.amount.toFixed(2)}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--accent-green)' }}>
+                      {formatCurrency(p.amount, currentCurrency)}
+                    </td>
                     <td>{p.method}</td>
                     <td>
                       {p.status === 'Completed' ? (
                         <span className="badge badge-success">Completed</span>
                       ) : (
-                        <span className="badge badge-warning">Pending Wire</span>
+                        <span className="badge badge-warning">Pending Transfer</span>
                       )}
                     </td>
                     <td>
@@ -315,10 +318,10 @@ export default function AdminPortal() {
                           style={{ background: 'var(--accent-green)', borderColor: 'var(--accent-green)' }}
                           onClick={() => adminProcessPayout(p.id, 'Completed')}
                         >
-                          <CheckCircle2 size={14} /> Mark Wire Sent
+                          <CheckCircle2 size={14} /> Mark Funds Sent
                         </button>
                       ) : (
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Wire Dispatched</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Dispatched</span>
                       )}
                     </td>
                   </tr>
@@ -333,12 +336,12 @@ export default function AdminPortal() {
       {activeAdminTab === 'settings' && (
         <div className="card" style={{ maxWidth: '600px' }}>
           <div className="card-header">
-            <h3 className="card-title">Ad Network Yield & Compliance Rules</h3>
+            <h3 className="card-title">Ad Network Yield & Anti-Bot Protection Rules</h3>
           </div>
 
           <form onSubmit={handleSaveSettings}>
             <div className="form-group">
-              <label className="form-label">Global Network Default Floor CPM ($)</label>
+              <label className="form-label">Global Network Default Floor CPM ($ USD)</label>
               <input 
                 type="number"
                 step="0.10"
@@ -362,18 +365,18 @@ export default function AdminPortal() {
             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1rem' }}>
               <input 
                 type="checkbox"
-                id="autoApprove"
-                checked={systemSettings.autoApproveSites}
-                onChange={e => setSystemSettings({ ...systemSettings, autoApproveSites: e.target.checked })}
+                id="antiBot"
+                checked={systemSettings.antiBotProtection}
+                onChange={e => setSystemSettings({ ...systemSettings, antiBotProtection: e.target.checked })}
                 style={{ width: '18px', height: '18px' }}
               />
-              <label htmlFor="autoApprove" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer' }}>
-                Auto-approve newly submitted domain properties
+              <label htmlFor="antiBot" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+                Enable Anti-Bot & Invalid Click Filtering Shield
               </label>
             </div>
 
             <button type="submit" className="btn btn-admin" style={{ width: '100%', marginTop: '1.25rem' }}>
-              Save Master Rules
+              Save Master Network Rules
             </button>
           </form>
         </div>

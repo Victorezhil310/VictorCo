@@ -20,6 +20,7 @@ const FRESH_EMPTY_SITES = [
     id: 'site_1',
     name: 'TechPulse Daily',
     url: 'https://techpulsedaily.com',
+    type: 'Website',
     category: 'Technology & Gadgets',
     status: 'Approved',
     dailyImpressions: 0,
@@ -39,6 +40,7 @@ const FRESH_EMPTY_AD_UNITS = [
     siteName: 'TechPulse Daily',
     name: 'Header Leaderboard Banner',
     format: 'Display Leaderboard (728x90)',
+    platform: 'Web',
     type: 'responsive',
     status: 'Active',
     impressions: 0,
@@ -60,17 +62,21 @@ const FRESH_EMPTY_KYC = {
   country: 'United States',
   documentUploaded: false,
   documentFileName: '',
-  status: 'Unsubmitted', // Unsubmitted, Pending, Approved, Rejected
+  status: 'Unsubmitted',
   submittedAt: null,
   verifiedAt: null
 };
 
 const FRESH_EMPTY_BANK = {
+  payoutMethod: 'Bank Wire', // Bank Wire, PayPal, Crypto, Wise, Payoneer
   accountHolder: '',
   bankName: '',
   accountNumber: '',
   routingNumber: '',
   swiftCode: '',
+  paypalEmail: '',
+  cryptoWallet: '',
+  cryptoNetwork: 'USDT (TRC-20)',
   currency: 'USD ($)',
   payoutThreshold: 100,
   isVerified: false
@@ -90,6 +96,10 @@ export const AppProvider = ({ children }) => {
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isLiveSimulating, setIsLiveSimulating] = useState(false);
+
+  // Multi-Language & Multi-Currency State
+  const [currentLang, setCurrentLang] = useState(() => localStorage.getItem('admetrics_lang') || 'en');
+  const [currentCurrency, setCurrentCurrency] = useState(() => localStorage.getItem('admetrics_currency') || 'USD');
 
   const [sites, setSites] = useState(() => {
     const saved = localStorage.getItem('admetrics_sites');
@@ -118,11 +128,11 @@ export const AppProvider = ({ children }) => {
 
   const [systemSettings, setSystemSettings] = useState(() => {
     const saved = localStorage.getItem('admetrics_settings');
-    return saved ? JSON.parse(saved) : { defaultCpm: 4.50, networkFillRate: 98.5, autoApproveSites: true };
+    return saved ? JSON.parse(saved) : { defaultCpm: 4.50, networkFillRate: 98.5, autoApproveSites: true, antiBotProtection: true };
   });
 
   const [notifications, setNotifications] = useState([
-    { id: 1, text: 'Welcome to AdMetrics Pro! Complete your website verification and KYC to start earning.', time: 'Just now', unread: true }
+    { id: 1, text: 'Welcome to AdMetrics Pro! Complete website & app monetization setup.', time: 'Just now', unread: true }
   ]);
 
   // Sync state to LocalStorage
@@ -132,6 +142,8 @@ export const AppProvider = ({ children }) => {
   useEffect(() => { localStorage.setItem('admetrics_kyc', JSON.stringify(kycData)); }, [kycData]);
   useEffect(() => { localStorage.setItem('admetrics_bank', JSON.stringify(bankData)); }, [bankData]);
   useEffect(() => { localStorage.setItem('admetrics_payouts', JSON.stringify(payouts)); }, [payouts]);
+  useEffect(() => { localStorage.setItem('admetrics_lang', currentLang); }, [currentLang]);
+  useEffect(() => { localStorage.setItem('admetrics_currency', currentCurrency); }, [currentCurrency]);
   useEffect(() => { localStorage.setItem('admetrics_admin_session', isAdminUnlocked ? 'true' : 'false'); }, [isAdminUnlocked]);
 
   // Real-Time Impression Ticker & Revenue Simulator
@@ -171,7 +183,7 @@ export const AppProvider = ({ children }) => {
     setIsLiveSimulating(false);
     localStorage.clear();
     confetti({ particleCount: 50, spread: 60 });
-    alert('Account reset to fresh $0.00 clean state! Start connecting your domain and earning live.');
+    alert('Account reset to fresh $0.00 clean state!');
   };
 
   // Financial Calculations
@@ -203,11 +215,12 @@ export const AppProvider = ({ children }) => {
   };
 
   // Publisher Actions
-  const addWebsite = (url, category, name) => {
+  const addWebsite = (url, category, name, type = 'Website') => {
     const newSite = {
       id: `site_${Date.now()}`,
       name: name || url.replace('https://', '').replace('http://', '').split('/')[0],
       url,
+      type,
       category,
       status: systemSettings.autoApproveSites ? 'Approved' : 'Pending',
       dailyImpressions: 0,
@@ -222,19 +235,22 @@ export const AppProvider = ({ children }) => {
     return newSite;
   };
 
-  const createAdUnit = (siteId, name, format, type) => {
+  const createAdUnit = (siteId, name, format, type = 'responsive', platform = 'Web') => {
     const selectedSite = sites.find(s => s.id === siteId);
     const newAdUnit = {
       id: `ad_unit_${Math.floor(100 + Math.random() * 900)}`,
       siteId,
-      siteName: selectedSite ? selectedSite.name : 'Selected Site',
+      siteName: selectedSite ? selectedSite.name : 'Selected Property',
       name,
       format,
-      type: type || 'banner',
+      platform,
+      type,
       status: 'Active',
       impressions: 0,
       clicks: 0,
-      codeSnippet: `<script async src="https://cdn.admetricspro.com/v1/ad.js" data-ad-client="${user.id}" data-ad-slot="ad_unit_${Date.now()}"></script>`
+      codeSnippet: platform === 'Mobile App (SDK)' 
+        ? `AdMetricsSDK.loadInterstitialAd(context, "${user.id}", "ad_unit_${Date.now()}");`
+        : `<script async src="https://cdn.admetricspro.com/v1/ad.js" data-ad-client="${user.id}" data-ad-slot="ad_unit_${Date.now()}"></script>`
     };
     setAdUnits(prev => [newAdUnit, ...prev]);
     return newAdUnit;
@@ -271,19 +287,25 @@ export const AppProvider = ({ children }) => {
     }));
   };
 
-  const requestPayout = (amount) => {
+  const requestPayout = (amount, method) => {
     if (amount > currentBalance) {
       throw new Error(`Requested payout ($${amount.toFixed(2)}) exceeds current available balance ($${currentBalance.toFixed(2)}).`);
     }
     if (amount < bankData.payoutThreshold) {
       throw new Error(`Minimum withdrawal threshold is $${bankData.payoutThreshold}`);
     }
+
+    let payoutMethodLabel = method || bankData.payoutMethod || 'Direct Wire';
+    if (payoutMethodLabel === 'PayPal') payoutMethodLabel = `PayPal (${bankData.paypalEmail || 'Email Verified'})`;
+    else if (payoutMethodLabel === 'Crypto') payoutMethodLabel = `Crypto ${bankData.cryptoNetwork || 'USDT'} (${bankData.cryptoWallet.substring(0, 8)}...)`;
+    else payoutMethodLabel = `Bank Wire (${bankData.bankName || 'Linked Bank'})`;
+
     const newPayout = {
       id: `pay_${Math.floor(100 + Math.random() * 900)}`,
       date: new Date().toISOString().split('T')[0],
       amount: parseFloat(amount),
-      method: `Direct Wire (${bankData.bankName || 'Linked Bank'})`,
-      reference: `REQ-${Math.floor(100000 + Math.random() * 900000)}`,
+      method: payoutMethodLabel,
+      reference: `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
       status: 'Pending'
     };
     setPayouts(prev => [newPayout, ...prev]);
@@ -317,6 +339,10 @@ export const AppProvider = ({ children }) => {
       isAdminUnlocked,
       activeTab,
       setActiveTab,
+      currentLang,
+      setCurrentLang,
+      currentCurrency,
+      setCurrentCurrency,
       sites,
       adUnits,
       kycData,

@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
 import { 
   Zap, LayoutDashboard, Globe, Code2, ShieldAlert, CreditCard, 
-  ShieldCheck, Lock, Unlock, Bell, User, LogOut, PlusCircle, CheckCircle2, Scale, Play, Pause, RotateCcw 
+  ShieldCheck, Lock, Unlock, Bell, User, LogOut, PlusCircle, CheckCircle2, Scale, Play, Pause, RotateCcw, Languages, DollarSign 
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import AdminPinModal from './AdminPinModal';
+import { LANGUAGES, CURRENCIES, formatCurrency } from '../i18n/translations';
 
 export default function Navbar() {
   const { 
     user, isAdminUnlocked, activeTab, setActiveTab, lockAdmin, 
-    currentBalance, kycData, notifications, isLiveSimulating, setIsLiveSimulating, resetToZeroAccount 
+    currentBalance, kycData, notifications, isLiveSimulating, setIsLiveSimulating, resetToZeroAccount,
+    currentLang, setCurrentLang, currentCurrency, setCurrentCurrency
   } = useApp();
 
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+
+  const t = LANGUAGES[currentLang] || LANGUAGES.en;
 
   const handleAdminClick = () => {
     if (isAdminUnlocked) {
@@ -53,28 +57,28 @@ export default function Navbar() {
               onClick={() => setActiveTab('dashboard')}
             >
               <LayoutDashboard size={17} />
-              <span>Dashboard</span>
+              <span>{t.dashboard}</span>
             </li>
             <li 
               className={`nav-item ${activeTab === 'sites' ? 'active' : ''}`}
               onClick={() => setActiveTab('sites')}
             >
               <Globe size={17} />
-              <span>Websites</span>
+              <span>{t.websites}</span>
             </li>
             <li 
               className={`nav-item ${activeTab === 'adunits' ? 'active' : ''}`}
               onClick={() => setActiveTab('adunits')}
             >
               <Code2 size={17} />
-              <span>Ad Units</span>
+              <span>{t.adUnits}</span>
             </li>
             <li 
               className={`nav-item ${activeTab === 'kyc' ? 'active' : ''}`}
               onClick={() => setActiveTab('kyc')}
             >
               <ShieldAlert size={17} />
-              <span>KYC & Tax</span>
+              <span>{t.kyc}</span>
               {kycData.status === 'Approved' ? (
                 <CheckCircle2 size={13} color="var(--accent-green)" />
               ) : (
@@ -86,29 +90,59 @@ export default function Navbar() {
               onClick={() => setActiveTab('payments')}
             >
               <CreditCard size={17} />
-              <span>Bank & Payouts</span>
+              <span>{t.payments}</span>
             </li>
             <li 
               className={`nav-item ${activeTab === 'terms' ? 'active' : ''}`}
               onClick={() => setActiveTab('terms')}
             >
               <Scale size={17} />
-              <span>Terms & Policies</span>
+              <span>{t.terms}</span>
             </li>
           </ul>
 
           {/* Right Header Actions */}
           <div className="nav-actions">
+            {/* Language Selector Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', background: 'var(--bg-card)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              <Languages size={15} color="var(--primary)" />
+              <select 
+                value={currentLang} 
+                onChange={e => setCurrentLang(e.target.value)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}
+              >
+                {Object.keys(LANGUAGES).map(langKey => (
+                  <option key={langKey} value={langKey} style={{ background: '#1F2937', color: 'white' }}>
+                    {LANGUAGES[langKey].flag} {LANGUAGES[langKey].name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Currency Selector Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', background: 'var(--bg-card)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+              <select 
+                value={currentCurrency} 
+                onChange={e => setCurrentCurrency(e.target.value)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--accent-green)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}
+              >
+                {Object.keys(CURRENCIES).map(currKey => (
+                  <option key={currKey} value={currKey} style={{ background: '#1F2937', color: 'white' }}>
+                    {CURRENCIES[currKey].symbol} {currKey}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Start Live Stream Button */}
             <button 
               className="btn btn-secondary btn-sm"
               onClick={() => setIsLiveSimulating(!isLiveSimulating)}
-              title={isLiveSimulating ? "Pause live RTB impression stream" : "Start live RTB impression stream"}
               style={{ color: isLiveSimulating ? 'var(--accent-green)' : 'var(--primary)', borderColor: isLiveSimulating ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-color)' }}
             >
               {isLiveSimulating ? <Pause size={14} /> : <Play size={14} />}
               <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>
-                {isLiveSimulating ? 'Pause Stream' : 'Start Live Ads Stream'}
+                {isLiveSimulating ? t.pauseStream : t.startLiveStream}
               </span>
             </button>
 
@@ -116,60 +150,23 @@ export default function Navbar() {
             <button 
               className="btn btn-secondary btn-sm"
               onClick={resetToZeroAccount}
-              title="Reset account to clean $0.00 state"
+              title={t.resetAccount}
               style={{ padding: '0.5rem', color: 'var(--text-muted)' }}
             >
               <RotateCcw size={15} />
             </button>
 
-            {/* Unpaid Balance Badge */}
+            {/* Unpaid Balance Badge in Selected Currency */}
             <div style={{
               background: 'var(--bg-card)', border: '1px solid var(--border-color)',
               padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', alignItems: 'flex-end'
             }}>
               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                Unpaid Balance
+                {t.unpaidBalance}
               </span>
               <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
-                ${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(currentBalance, currentCurrency)}
               </span>
-            </div>
-
-            {/* Notifications Bell */}
-            <div style={{ position: 'relative' }}>
-              <button 
-                onClick={() => setShowNotifs(!showNotifs)}
-                className="btn btn-secondary btn-sm"
-                style={{ padding: '0.55rem', borderRadius: 'var(--radius-md)' }}
-              >
-                <Bell size={18} />
-                {notifications.some(n => n.unread) && (
-                  <span style={{
-                    position: 'absolute', top: '2px', right: '2px', width: '8px', height: '8px',
-                    borderRadius: '50%', background: 'var(--accent-red)'
-                  }} />
-                )}
-              </button>
-
-              {showNotifs && (
-                <div className="card" style={{
-                  position: 'absolute', top: '120%', right: 0, width: '320px', padding: '1rem', zIndex: 200,
-                  boxShadow: 'var(--shadow-lg)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                    <span>Notifications</span>
-                    <span style={{ color: 'var(--primary)', fontSize: '0.75rem', cursor: 'pointer' }}>Mark all read</span>
-                  </div>
-                  {notifications.map(n => (
-                    <div key={n.id} style={{
-                      padding: '0.6rem 0', borderBottom: '1px solid var(--border-color)', fontSize: '0.8rem', color: 'var(--text-secondary)'
-                    }}>
-                      <div style={{ color: 'var(--text-main)', marginBottom: '0.2rem' }}>{n.text}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{n.time}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Admin PIN Login Button */}
@@ -180,7 +177,7 @@ export default function Navbar() {
                   className={`btn btn-admin btn-sm ${activeTab === 'admin' ? 'active' : ''}`}
                 >
                   <ShieldCheck size={16} />
-                  <span>Admin Portal</span>
+                  <span>{t.admin}</span>
                 </button>
                 <button 
                   onClick={lockAdmin} 
@@ -200,23 +197,6 @@ export default function Navbar() {
                 <span>Admin Login (PIN)</span>
               </button>
             )}
-
-            {/* Publisher Profile Chip */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.35rem 0.6rem',
-              background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)'
-            }}>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #10B981, #059669)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.85rem'
-              }}>
-                {user.name.charAt(0)}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>{user.name}</span>
-                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>ID: {user.id}</span>
-              </div>
-            </div>
           </div>
         </div>
       </nav>

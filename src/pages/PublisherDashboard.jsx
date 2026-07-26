@@ -4,12 +4,16 @@ import {
   CheckCircle2, Clock, PlusCircle, ArrowRight, ShieldCheck, Download, Sparkles, Play, ShieldAlert, CreditCard
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { LANGUAGES, formatCurrency } from '../i18n/translations';
 
 export default function PublisherDashboard() {
   const { 
     user, sites, adUnits, totalEarnings, currentBalance, 
-    kycData, bankData, setActiveTab, isLiveSimulating, setIsLiveSimulating 
+    kycData, bankData, setActiveTab, isLiveSimulating, setIsLiveSimulating,
+    currentLang, currentCurrency 
   } = useApp();
+
+  const t = LANGUAGES[currentLang] || LANGUAGES.en;
 
   const [timeRange, setTimeRange] = useState('7d');
 
@@ -28,13 +32,13 @@ export default function PublisherDashboard() {
 
   const totalImpressions = sites.reduce((sum, s) => sum + (s.dailyImpressions || 0), 0);
   const totalClicks = sites.reduce((sum, s) => sum + (s.dailyClicks || 0), 0);
-  const avgCpm = sites.length > 0 ? (sites.reduce((sum, s) => sum + (s.cpm || 0), 0) / sites.length).toFixed(2) : '0.00';
+  const avgCpm = sites.length > 0 ? (sites.reduce((sum, s) => sum + (s.cpm || 0), 0) / sites.length) : 0;
   const avgCtr = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(2) : '0.00';
 
   // Onboarding Step Progress
   const hasApprovedSite = sites.some(s => s.status === 'Approved');
   const hasKycSubmitted = kycData.status === 'Approved' || kycData.status === 'Pending';
-  const hasBankLinked = bankData.accountNumber !== '';
+  const hasBankLinked = bankData.accountNumber !== '' || bankData.paypalEmail !== '' || bankData.cryptoWallet !== '';
 
   const completedStepsCount = (hasApprovedSite ? 1 : 0) + (hasKycSubmitted ? 1 : 0) + (hasBankLinked ? 1 : 0);
   const onboardingPct = Math.round((completedStepsCount / 3) * 100);
@@ -80,19 +84,19 @@ export default function PublisherDashboard() {
         <div style={{ display: 'flex', gap: '0.75rem', zIndex: 2 }}>
           {!isLiveSimulating && (
             <button className="btn btn-primary" onClick={() => setIsLiveSimulating(true)}>
-              <Play size={16} /> Start Live Ads Engine
+              <Play size={16} /> {t.startLiveStream}
             </button>
           )}
           <button className="btn btn-secondary" onClick={() => setActiveTab('sites')}>
-            <Globe size={16} /> Manage Websites
+            <Globe size={16} /> {t.websites}
           </button>
           <button className="btn btn-primary" onClick={() => setActiveTab('adunits')}>
-            <PlusCircle size={16} /> Create Ad Unit
+            <PlusCircle size={16} /> {t.adUnits}
           </button>
         </div>
       </div>
 
-      {/* Onboarding Checklist Card (Shows when starting from 0) */}
+      {/* Onboarding Checklist Card */}
       {onboardingPct < 100 && (
         <div className="card" style={{ marginBottom: '2rem', border: '1px solid rgba(59, 130, 246, 0.4)', background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(30, 41, 59, 0.9))' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -106,7 +110,6 @@ export default function PublisherDashboard() {
           </div>
 
           <div className="grid-3" style={{ gap: '1rem' }}>
-            {/* Step 1 */}
             <div style={{
               background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: hasApprovedSite ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-color)',
               display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
@@ -115,19 +118,18 @@ export default function PublisherDashboard() {
                 {hasApprovedSite ? <CheckCircle2 size={22} /> : <Globe size={22} />}
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>1. Connect Domain Website</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>1. Connect Domain Website / App</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  {hasApprovedSite ? 'Domain approved & connected.' : 'Add your website domain URL.'}
+                  {hasApprovedSite ? 'Property connected & approved.' : 'Add your website or mobile app.'}
                 </div>
                 {!hasApprovedSite && (
                   <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('sites')} style={{ marginTop: '0.6rem' }}>
-                    Add Website
+                    Add Property
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Step 2 */}
             <div style={{
               background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: hasKycSubmitted ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-color)',
               display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
@@ -148,7 +150,6 @@ export default function PublisherDashboard() {
               </div>
             </div>
 
-            {/* Step 3 */}
             <div style={{
               background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: hasBankLinked ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-color)',
               display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
@@ -157,13 +158,13 @@ export default function PublisherDashboard() {
                 {hasBankLinked ? <CheckCircle2 size={22} /> : <CreditCard size={22} />}
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>3. Link Bank Account</div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-main)' }}>3. Link Payout Method</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  {hasBankLinked ? 'Bank wire account linked.' : 'Set SWIFT/IBAN wire account details.'}
+                  {hasBankLinked ? 'Payout method configured.' : 'Bank Wire, PayPal, Crypto, or Wise.'}
                 </div>
                 {!hasBankLinked && (
                   <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('payments')} style={{ marginTop: '0.6rem' }}>
-                    Link Bank Account
+                    Setup Payouts
                   </button>
                 )}
               </div>
@@ -174,16 +175,16 @@ export default function PublisherDashboard() {
 
       {/* Metric Cards Grid */}
       <div className="grid-4" style={{ marginBottom: '2rem' }}>
-        {/* Card 1: Total Earnings */}
+        {/* Card 1: Total Earnings in Selected Currency */}
         <div className="stat-box">
           <div className="stat-header">
-            <span>Lifetime Revenue</span>
+            <span>{t.lifetimeRevenue}</span>
             <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--accent-green)' }}>
               <DollarSign size={20} />
             </div>
           </div>
           <div className="stat-value" style={{ color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
-            ${totalEarnings.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatCurrency(totalEarnings, currentCurrency)}
           </div>
           <div className="stat-change up">
             <TrendingUp size={14} /> Real-time programmatic balance
@@ -193,7 +194,7 @@ export default function PublisherDashboard() {
         {/* Card 2: Today's Impressions */}
         <div className="stat-box">
           <div className="stat-header">
-            <span>Daily Ad Impressions</span>
+            <span>{t.dailyImpressions}</span>
             <div className="stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--primary)' }}>
               <Eye size={20} />
             </div>
@@ -209,13 +210,13 @@ export default function PublisherDashboard() {
         {/* Card 3: Average eCPM */}
         <div className="stat-box">
           <div className="stat-header">
-            <span>Average eCPM</span>
+            <span>{t.avgCpm}</span>
             <div className="stat-icon" style={{ background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple)' }}>
               <Sparkles size={20} />
             </div>
           </div>
           <div className="stat-value" style={{ color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)' }}>
-            ${avgCpm}
+            {formatCurrency(avgCpm, currentCurrency)}
           </div>
           <div className="stat-change up">
             <TrendingUp size={14} /> Global CPM yield price
@@ -225,7 +226,7 @@ export default function PublisherDashboard() {
         {/* Card 4: Click Through Rate */}
         <div className="stat-box">
           <div className="stat-header">
-            <span>Click Through Rate (CTR)</span>
+            <span>{t.ctr}</span>
             <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--accent-amber)' }}>
               <MousePointer size={20} />
             </div>
@@ -274,7 +275,7 @@ export default function PublisherDashboard() {
               return (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', height: '100%', justifyContent: 'flex-end' }}>
                   <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
-                    ${d.revenue.toFixed(2)}
+                    {formatCurrency(d.revenue, currentCurrency)}
                   </span>
                   <div style={{
                     width: '100%', maxWidth: '38px', height: `${Math.max(heightPct, 6)}px`,
@@ -295,11 +296,11 @@ export default function PublisherDashboard() {
         <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <h3 className="card-title">Available Payout Balance</h3>
-            <p className="card-subtitle">Processed earnings ready for direct bank wire transfer</p>
+            <p className="card-subtitle">Processed earnings ready for withdrawal</p>
             
             <div style={{ margin: '1.5rem 0' }}>
               <span style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)', letterSpacing: '-1px' }}>
-                ${currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(currentBalance, currentCurrency)}
               </span>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
                 Next automatic payout cycle: <strong>21st of this month</strong>
@@ -311,7 +312,7 @@ export default function PublisherDashboard() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.4rem' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Minimum Threshold:</span>
-                <span style={{ color: 'var(--text-main)', fontWeight: 700 }}>$100.00</span>
+                <span style={{ color: 'var(--text-main)', fontWeight: 700 }}>{formatCurrency(100, currentCurrency)}</span>
               </div>
               <div style={{ width: '100%', height: '6px', background: 'var(--bg-main)', borderRadius: '3px', overflow: 'hidden' }}>
                 <div style={{ width: `${Math.min((currentBalance / 100) * 100, 100)}%`, height: '100%', background: 'var(--accent-green)' }}></div>
@@ -323,25 +324,24 @@ export default function PublisherDashboard() {
             className="btn btn-primary" 
             style={{ width: '100%' }}
             onClick={() => setActiveTab('payments')}
-            disabled={currentBalance < bankData.payoutThreshold}
           >
-            <span>Request Bank Wire Payout</span>
+            <span>{t.requestPayout}</span>
             <ArrowRight size={16} />
           </button>
         </div>
       </div>
 
-      {/* Connected Websites Table */}
+      {/* Connected Properties Table */}
       <div className="card">
         <div className="card-header">
           <div>
             <h3 className="card-title">
-              <Globe size={18} color="var(--accent-cyan)" /> Connected Websites & Monetization Status
+              <Globe size={18} color="var(--accent-cyan)" /> Connected Properties (Web, Apps & Video Streams)
             </h3>
-            <p className="card-subtitle">Active publisher domain properties receiving ad bids</p>
+            <p className="card-subtitle">Monetized publisher properties receiving ad bids</p>
           </div>
           <button className="btn btn-secondary btn-sm" onClick={() => setActiveTab('sites')}>
-            <PlusCircle size={14} /> Add Website
+            <PlusCircle size={14} /> Add Property
           </button>
         </div>
 
@@ -349,7 +349,8 @@ export default function PublisherDashboard() {
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Website Domain</th>
+                <th>Property Domain / App ID</th>
+                <th>Type</th>
                 <th>Category</th>
                 <th>Status</th>
                 <th>Daily Impressions</th>
@@ -378,6 +379,9 @@ export default function PublisherDashboard() {
                     </div>
                   </td>
                   <td>
+                    <span className="badge badge-info">{site.type || 'Website'}</span>
+                  </td>
+                  <td>
                     <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{site.category}</span>
                   </td>
                   <td>
@@ -391,17 +395,17 @@ export default function PublisherDashboard() {
                   </td>
                   <td style={{ fontFamily: 'var(--font-mono)' }}>{site.dailyImpressions.toLocaleString()}</td>
                   <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-purple)', fontWeight: 700 }}>
-                    ${site.cpm.toFixed(2)}
+                    {formatCurrency(site.cpm, currentCurrency)}
                   </td>
                   <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-green)', fontWeight: 800 }}>
-                    ${site.earnings.toFixed(2)}
+                    {formatCurrency(site.earnings, currentCurrency)}
                   </td>
                   <td>
                     <button 
                       className="btn btn-secondary btn-sm"
                       onClick={() => setActiveTab('adunits')}
                     >
-                      Get Ad Code
+                      Get Code
                     </button>
                   </td>
                 </tr>
