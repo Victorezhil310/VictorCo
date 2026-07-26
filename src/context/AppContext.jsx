@@ -273,10 +273,14 @@ export const AppProvider = ({ children }) => {
       recordAdClick,
       createCampaign,
       requestWithdrawal,
+      bankData,
+      setBankData,
       verifyAdminPin,
       lockAdmin,
       adminApproveCampaign,
       adminApprovePayout,
+      videoAds,
+      adminAddVideoAd,
       OFFICIAL_ADSENSE_CLIENT
     }}>
       {children}
